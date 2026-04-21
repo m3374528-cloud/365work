@@ -21,6 +21,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
 .chip-wrap{display:flex;flex-wrap:wrap;gap:6px}
 input,select{width:100%;padding:8px 10px;border:0.5px solid #ccc;border-radius:8px;font-size:13px;background:#fff;color:#1a1a1a;font-family:inherit}
 input[type=date]{color:#1a1a1a}
+input[type=checkbox]{width:16px!important;height:16px;cursor:pointer;flex-shrink:0}
 .lbl{font-size:12px;color:#888;margin-bottom:4px;margin-top:8px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .add-btn{width:100%;padding:8px;border:0.5px dashed #ccc;border-radius:8px;background:transparent;color:#888;font-size:13px;cursor:pointer;margin-top:8px}
@@ -33,20 +34,23 @@ input[type=date]{color:#1a1a1a}
 .warn-box{display:none;margin-top:8px;padding:10px 12px;background:#FCEBEB;border:0.5px solid #F09595;border-radius:8px;font-size:12px;color:#A32D2D;line-height:1.5}
 .warn-box.show{display:block}
 .warn-check{display:flex;align-items:flex-start;gap:8px;margin-top:8px}
-.warn-check input[type=checkbox]{width:16px;height:16px;flex-shrink:0;margin-top:1px;cursor:pointer}
 .warn-check label{font-size:12px;color:#A32D2D;cursor:pointer;line-height:1.4}
 .no-receipt-box{display:none;margin-top:8px;padding:10px 12px;background:#FAEEDA;border:0.5px solid #FAC775;border-radius:8px;font-size:12px;color:#633806;line-height:1.5}
 .no-receipt-box.show{display:block}
+.no-receipt-box .warn-check label{color:#633806}
+.check-row{display:flex;align-items:center;gap:8px;margin:8px 0}
+.check-row label{font-size:13px;color:#555;cursor:pointer}
 .file-label{display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;border:0.5px dashed #ccc;border-radius:8px;color:#888;font-size:13px;cursor:pointer;margin-top:6px}
 .file-label:hover{background:#f5f5f0}
+.file-label.invoice{border-color:#534AB7;color:#534AB7}
 .add-photo-btn{display:none;width:100%;padding:8px;border:0.5px dashed #1D9E75;border-radius:8px;background:transparent;color:#1D9E75;font-size:13px;cursor:pointer;margin-top:6px;text-align:center}
+.add-invoice-btn{display:none;width:100%;padding:8px;border:0.5px dashed #534AB7;border-radius:8px;background:transparent;color:#534AB7;font-size:13px;cursor:pointer;margin-top:6px;text-align:center}
 .preview-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .preview-wrap canvas{width:80px;height:80px;object-fit:cover;border-radius:8px;border:0.5px solid #eee}
 .req{color:#E24B4A;margin-left:2px}
 .time-row{display:flex;align-items:center;gap:6px}
 .time-row span{color:#888;font-size:13px;flex-shrink:0}
 .ot-row{display:flex;align-items:center;gap:6px;margin-top:8px}
-.ot-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;flex-shrink:0}
 .ot-row label{font-size:13px;color:#888;cursor:pointer}
 .vat-box{margin-top:8px;padding:10px 12px;background:#f5f5f0;border-radius:8px;display:none}
 .vat-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0}
@@ -91,16 +95,13 @@ input[type=date]{color:#1a1a1a}
 .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:500;margin-left:4px}
 .badge-corp{background:#E6F1FB;color:#0C447C}
 .badge-personal{background:#FAEEDA;color:#633806}
-
-/* 확인 탭 */
-.record-card{background:#fff;border:0.5px solid #e0e0d8;border-radius:12px;padding:1rem;margin-bottom:10px;cursor:pointer;transition:all 0.15s}
+.record-card{background:#fff;border:0.5px solid #e0e0d8;border-radius:12px;padding:1rem;margin-bottom:10px;cursor:pointer}
 .record-card:hover{background:#f5f5f0}
 .record-card-title{font-size:14px;font-weight:500;color:#1a1a1a;margin-bottom:4px}
 .record-card-sub{font-size:12px;color:#888}
-.record-detail{display:none}
-.record-detail.show{display:block}
 .back-btn{width:100%;padding:12px;background:#f5f5f0;color:#555;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:12px}
 .empty-state{text-align:center;padding:40px 20px;color:#888;font-size:13px}
+.disabled-section{opacity:0.4;pointer-events:none}
 </style>
 </head>
 <body>
@@ -110,7 +111,6 @@ input[type=date]{color:#1a1a1a}
   <div class="loading-text" id="loading-text">불러오는 중...</div>
 </div>
 
-<!-- 탭 바 -->
 <div class="tab-bar">
   <div class="tab on" id="tab-write" onclick="switchTab('write')">✏️ 작업일보 작성</div>
   <div class="tab" id="tab-view" onclick="switchTab('view')">📋 작업일보 확인</div>
@@ -118,7 +118,6 @@ input[type=date]{color:#1a1a1a}
 
 <!-- 작성 탭 -->
 <div class="page on" id="page-write">
-
 <div style="padding:12px 0 4px">
   <p style="font-size:16px;font-weight:500;margin-bottom:2px">현장 작업일보</p>
   <p id="today-date" style="font-size:12px;color:#888"></p>
@@ -146,18 +145,15 @@ input[type=date]{color:#1a1a1a}
 </div>
 <div class="section">
   <div class="sec-title">프로젝트 번호 <span class="req">*</span></div>
-  <select id="proj-sel" onchange="onDateOrProjChange()">
-    <option value="">— 프로젝트 선택 —</option>
-  </select>
+  <select id="proj-sel" onchange="onDateOrProjChange()"><option value="">— 프로젝트 선택 —</option></select>
   <div class="history-box" id="history-box" style="display:none">
     <p style="font-weight:500;margin-bottom:6px;color:#555">이미 제출된 작업일보가 있어요</p>
     <div id="history-list"></div>
-    <div class="history-btns">
-      <button class="history-btn btn-edit" onclick="startEdit()">✏️ 수정하기</button>
-    </div>
+    <div class="history-btns"><button class="history-btn btn-edit" onclick="startEdit()">✏️ 수정하기</button></div>
   </div>
 </div>
 <div class="edit-banner" id="edit-banner">✏️ 수정 모드 — 기존 내용을 수정 후 제출하세요</div>
+
 <div id="form-body" style="display:none">
 <div class="section">
   <div class="sec-title">투입 작업자</div>
@@ -165,6 +161,7 @@ input[type=date]{color:#1a1a1a}
   <div class="lbl">추가 인원</div>
   <input type="text" id="extra-workers" placeholder="추가 작업자 이름 입력 (쉼표로 구분)">
 </div>
+
 <div class="section">
   <div class="sec-title">작업 시간</div>
   <div class="time-row">
@@ -185,34 +182,63 @@ input[type=date]{color:#1a1a1a}
     </div>
   </div>
 </div>
+
+<!-- 경비 섹션 -->
 <div class="section">
   <div class="sec-title">경비 사용 내역</div>
-  <div id="expense-list"></div>
-  <button class="add-btn" onclick="addExpense()">+ 경비 항목 추가</button>
+  <div class="check-row">
+    <input type="checkbox" id="no-expense-chk" onchange="toggleNoExpense(this)">
+    <label for="no-expense-chk">경비 사용 없음</label>
+  </div>
+  <div id="expense-body">
+    <div id="expense-list"></div>
+    <button class="add-btn" onclick="addExpense()">+ 경비 항목 추가</button>
+    <div style="margin-top:12px;padding-top:10px;border-top:0.5px dashed #eee">
+      <div class="sec-title" style="margin-bottom:6px">📷 경비 영수증</div>
+      <label class="file-label">
+        <input type="file" id="receipt-input" accept="image/*" multiple style="display:none" onchange="previewFiles(this,'receipt',false)">
+        📷 영수증 사진 촬영 또는 갤러리 선택
+      </label>
+      <div class="add-photo-btn" id="add-photo-btn" onclick="document.getElementById('add-receipt-input').click()">
+        📷 영수증 추가 촬영
+        <input type="file" id="add-receipt-input" accept="image/*" multiple style="display:none" onchange="previewFiles(this,'receipt',true)">
+      </div>
+      <div class="preview-wrap" id="receipt-preview"></div>
+      <p style="font-size:11px;color:#bbb;margin-top:6px">사진 하단에 날짜/프로젝트번호/카드정보가 자동 표시됩니다</p>
+    </div>
+  </div>
 </div>
+
+<!-- 장비 섹션 -->
 <div class="section">
   <div class="sec-title">장비 / 외주 사용 내역</div>
   <div id="equip-list"></div>
   <button class="add-btn" onclick="addEquip()">+ 항목 추가</button>
-</div>
-<div class="section">
-  <div class="sec-title">영수증 / 거래명세서 <span class="req">*</span></div>
-  <p style="font-size:11px;color:#888;margin-bottom:6px">사진 하단에 날짜 및 프로젝트 번호가 자동으로 표시됩니다</p>
-  <label class="file-label">
-    <input type="file" id="receipt-input" accept="image/*" multiple style="display:none" onchange="previewFiles(this,false)">
-    📷 사진 촬영 또는 갤러리 선택
-  </label>
-  <div class="add-photo-btn" id="add-photo-btn" onclick="document.getElementById('add-receipt-input').click()">
-    📷 사진 추가 촬영
-    <input type="file" id="add-receipt-input" accept="image/*" multiple style="display:none" onchange="previewFiles(this,true)">
+  <div style="margin-top:12px;padding-top:10px;border-top:0.5px dashed #eee">
+    <div class="sec-title" style="margin-bottom:6px">📄 거래명세서</div>
+    <div class="check-row">
+      <input type="checkbox" id="no-invoice-chk" onchange="toggleNoInvoice(this)">
+      <label for="no-invoice-chk">거래명세서 없음</label>
+    </div>
+    <div id="invoice-body">
+      <label class="file-label invoice">
+        <input type="file" id="invoice-input" accept="image/*" multiple style="display:none" onchange="previewFiles(this,'invoice',false)">
+        📄 거래명세서 촬영 또는 갤러리 선택
+      </label>
+      <div class="add-invoice-btn" id="add-invoice-btn" onclick="document.getElementById('add-invoice-input').click()">
+        📄 명세서 추가 촬영
+        <input type="file" id="add-invoice-input" accept="image/*" multiple style="display:none" onchange="previewFiles(this,'invoice',true)">
+      </div>
+      <div class="preview-wrap" id="invoice-preview"></div>
+    </div>
   </div>
-  <div class="preview-wrap" id="preview-wrap"></div>
-  <p style="font-size:11px;color:#bbb;margin-top:6px">영수증이 없는 경우 반드시 경위 메모를 촬영하여 첨부해주세요</p>
 </div>
+
 <div class="section">
   <div class="sec-title">작성자 <span class="req">*</span></div>
   <input type="text" id="writer" placeholder="작성자 이름 입력">
 </div>
+
 <div style="padding-bottom:30px">
   <button class="btn-final" id="submit-btn" onclick="showConfirm()" style="width:100%;padding:14px;font-size:15px">내용 확인하기</button>
 </div>
@@ -225,8 +251,6 @@ input[type=date]{color:#1a1a1a}
   <div style="padding:12px 0 4px">
     <p style="font-size:16px;font-weight:500;margin-bottom:2px">작업일보 확인</p>
   </div>
-
-  <!-- 목록 화면 -->
   <div id="view-list">
     <div class="section">
       <div class="sec-title">날짜 선택</div>
@@ -234,8 +258,6 @@ input[type=date]{color:#1a1a1a}
     </div>
     <div id="record-list"></div>
   </div>
-
-  <!-- 상세 화면 -->
   <div id="view-detail" style="display:none">
     <button class="back-btn" onclick="backToList()">← 목록으로</button>
     <div class="confirm-box show" id="detail-content">
@@ -248,11 +270,17 @@ input[type=date]{color:#1a1a1a}
 <script>
 const SCRIPT_URL='https://script.google.com/macros/s/AKfycbzNI4xmJT7kaA06gosQ2BE6kg8i5i1M-z_4tq3jsr32-nftkN0sH86ox9xEmVo0oe9IoQ/exec';
 let masterData={projects:[],workers:[],equipments:[],cards:[],expenseItems:[]};
-let processedFiles=[];
-let currentMode='new';
-let currentSeq=1;
+let receiptFiles=[],invoiceFiles=[];
+let currentMode='new',currentSeq=1;
 let expCount=0,eqCount=0;
 let submitPayload=null;
+
+// 카드 약자 변환
+function cardShort(cardCo, last4) {
+  const map = {'삼육오컴퍼니':'컴','컴퍼니':'컴','삼육오안전관리':'안','안전관리':'안','철거인':'철','개인':'개인'};
+  const short = map[cardCo] || cardCo.substring(0,2);
+  return `${short}${last4}`;
+}
 
 const todayObj=new Date();
 document.getElementById('today-date').textContent=todayObj.toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
@@ -267,23 +295,16 @@ function getSelectedDate(){
 function getProjNum(){const v=document.getElementById('proj-sel').value;return v?v.split('|')[1]:'';}
 function getProjBiz(){const v=document.getElementById('proj-sel').value;return v?v.split('|')[0]:'';}
 
-// 탭 전환
 function switchTab(tab){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
   document.getElementById('tab-'+tab).classList.add('on');
   document.getElementById('page-'+tab).classList.add('on');
-  if(tab==='view'){
-    const today=todayObj.toISOString().split('T')[0];
-    document.getElementById('view-date').value=today;
-    loadRecords();
-  }
+  if(tab==='view'){document.getElementById('view-date').value=todayObj.toISOString().split('T')[0];loadRecords();}
 }
 
-// 확인 탭 - 목록 불러오기
 async function loadRecords(){
-  const v=document.getElementById('view-date').value;
-  if(!v)return;
+  const v=document.getElementById('view-date').value;if(!v)return;
   const d=new Date(v+'T00:00:00');
   const dateStr=`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
   showLoading('작업일보 불러오는 중...');
@@ -291,44 +312,37 @@ async function loadRecords(){
     const res=await fetch(`${SCRIPT_URL}?action=getRecordsByDate&date=${encodeURIComponent(dateStr)}`).then(r=>r.json());
     hideLoading();
     const list=document.getElementById('record-list');
-    if(!res.data||res.data.length===0){
-      list.innerHTML=`<div class="empty-state">📭 ${dateStr}<br>제출된 작업일보가 없어요</div>`;
-      return;
-    }
+    if(!res.data||res.data.length===0){list.innerHTML=`<div class="empty-state">📭 ${dateStr}<br>제출된 작업일보가 없어요</div>`;return;}
     list.innerHTML='';
     res.data.forEach(r=>{
-      const card=document.createElement('div');
-      card.className='record-card';
-      card.innerHTML=`
-        <div class="record-card-title">✅ ${r.projName}</div>
+      const card=document.createElement('div');card.className='record-card';
+      card.innerHTML=`<div class="record-card-title">✅ ${r.projName}</div>
         <div class="record-card-sub">${r.projNum} | 작업자 ${r.workerCount}명 | ${r.timeRange}</div>
         <div class="record-card-sub" style="margin-top:2px">총경비 ${Number(r.totalAmt).toLocaleString()}원 | ${r.writer} | ${r.submitTime}</div>`;
-      card.onclick=()=>showDetail(r.projNum, dateStr);
+      card.onclick=()=>showDetail(r.projNum,dateStr);
       list.appendChild(card);
     });
   } catch(e){hideLoading();document.getElementById('record-list').innerHTML=`<div class="empty-state">데이터를 불러오지 못했어요</div>`;}
 }
 
-// 확인 탭 - 상세 보기
-async function showDetail(projNum, dateStr){
+async function showDetail(projNum,dateStr){
   showLoading('상세 내용 불러오는 중...');
   try {
-    const res=await fetch(`${SCRIPT_URL}?action=getSubmitData&date=${encodeURIComponent(dateStr)}&projNum=${encodeURIComponent(projNum)}`).then(r=>r.json());
-    const summary=await fetch(`${SCRIPT_URL}?action=checkSubmit&date=${encodeURIComponent(dateStr)}&projNum=${encodeURIComponent(projNum)}`).then(r=>r.json());
+    const [res,summary]=await Promise.all([
+      fetch(`${SCRIPT_URL}?action=getSubmitData&date=${encodeURIComponent(dateStr)}&projNum=${encodeURIComponent(projNum)}`).then(r=>r.json()),
+      fetch(`${SCRIPT_URL}?action=checkSubmit&date=${encodeURIComponent(dateStr)}&projNum=${encodeURIComponent(projNum)}`).then(r=>r.json())
+    ]);
     hideLoading();
-
     const proj=masterData.projects.find(p=>p.projNum===projNum)||{projName:projNum};
     const mainInfo=res.mainInfo||{};
     const submitInfo=summary.data&&summary.data.length>0?summary.data[0]:{};
-
     let html=`
       <div class="confirm-row"><span class="confirm-label">날짜</span><span class="confirm-value">${dateStr}</span></div>
       <div class="confirm-row"><span class="confirm-label">현장</span><span class="confirm-value">${proj.projName||projNum}</span></div>
       <div class="confirm-row"><span class="confirm-label">프로젝트</span><span class="confirm-value">${projNum}</span></div>
       <div class="confirm-row"><span class="confirm-label">작업자</span><span class="confirm-value">${mainInfo.workers||'-'}</span></div>
-      <div class="confirm-row"><span class="confirm-label">작업시간</span><span class="confirm-value">${mainInfo.timeStart||''}~${mainInfo.timeEnd||''}${mainInfo.overtime&&mainInfo.overtime!=='-'?` / 잔업 ${mainInfo.overtime}`:''}</span></div>
+      <div class="confirm-row"><span class="confirm-label">작업시간</span><span class="confirm-value">${mainInfo.timeStart||''}~${mainInfo.timeEnd||''}</span></div>
       <div class="confirm-row"><span class="confirm-label">작성자</span><span class="confirm-value">${submitInfo.writer||'-'}</span></div>`;
-
     if(res.expenses&&res.expenses.length>0){
       html+=`<div class="confirm-section"><div class="confirm-section-title">💳 경비 사용 내역</div>`;
       res.expenses.forEach(e=>{
@@ -337,18 +351,11 @@ async function showDetail(projNum, dateStr){
       });
       html+=`</div>`;
     }
-
     if(res.equips&&res.equips.length>0){
       html+=`<div class="confirm-section"><div class="confirm-section-title">🚜 장비 / 외주 내역</div>`;
-      res.equips.forEach(e=>{
-        html+=`<div class="confirm-item">${e.type}${e.company?` / ${e.company}`:''}<br>공급가 <strong>${Number(e.supplyAmt).toLocaleString()}원</strong> / 합계 <strong>${Number(e.totalAmt).toLocaleString()}원</strong></div>`;
-      });
+      res.equips.forEach(e=>{html+=`<div class="confirm-item">${e.type}${e.company?` / ${e.company}`:''}<br>공급가 <strong>${Number(e.supplyAmt).toLocaleString()}원</strong> / 합계 <strong>${Number(e.totalAmt).toLocaleString()}원</strong></div>`;});
       html+=`</div>`;
     }
-
-    const imgCount=submitInfo.imgCount||0;
-    html+=`<div class="confirm-section"><div class="confirm-section-title">📷 영수증</div><div class="confirm-item">${summary.data&&summary.data[0]?summary.data[0].imgCount||'확인 필요':'확인 필요'}장 첨부됨</div></div>`;
-
     document.getElementById('detail-body').innerHTML=html;
     document.getElementById('view-list').style.display='none';
     document.getElementById('view-detail').style.display='block';
@@ -356,13 +363,8 @@ async function showDetail(projNum, dateStr){
   } catch(e){hideLoading();alert('상세 내용을 불러오지 못했어요');}
 }
 
-function backToList(){
-  document.getElementById('view-detail').style.display='none';
-  document.getElementById('view-list').style.display='block';
-  window.scrollTo(0,0);
-}
+function backToList(){document.getElementById('view-detail').style.display='none';document.getElementById('view-list').style.display='block';window.scrollTo(0,0);}
 
-// 마스터 데이터 로드
 async function loadMasterData(){
   showLoading('데이터 불러오는 중...');
   try {
@@ -373,11 +375,8 @@ async function loadMasterData(){
       fetch(`${SCRIPT_URL}?action=getCards`).then(r=>r.json()),
       fetch(`${SCRIPT_URL}?action=getExpenseItems`).then(r=>r.json())
     ]);
-    masterData.projects=proj.data||[];
-    masterData.workers=workers.data||[];
-    masterData.equipments=equip.data||[];
-    masterData.cards=cards.data||[];
-    masterData.expenseItems=items.data||[];
+    masterData.projects=proj.data||[];masterData.workers=workers.data||[];
+    masterData.equipments=equip.data||[];masterData.cards=cards.data||[];masterData.expenseItems=items.data||[];
     buildProjectSelect();buildWorkerChips();buildTimePickers();
   } catch(e){console.error(e);}
   hideLoading();
@@ -420,11 +419,24 @@ function makeTimes(selId,from,to,defVal){
 
 function toggleOT(cb){document.getElementById('ot-wrap').style.display=cb.checked?'block':'none';}
 
+function toggleNoExpense(cb){
+  const body=document.getElementById('expense-body');
+  body.classList.toggle('disabled-section',cb.checked);
+  if(cb.checked){receiptFiles=[];document.getElementById('receipt-preview').innerHTML='';document.getElementById('add-photo-btn').style.display='none';}
+}
+
+function toggleNoInvoice(cb){
+  const body=document.getElementById('invoice-body');
+  body.classList.toggle('disabled-section',cb.checked);
+  if(cb.checked){invoiceFiles=[];document.getElementById('invoice-preview').innerHTML='';document.getElementById('add-invoice-btn').style.display='none';}
+}
+
 async function onDateOrProjChange(){
   const proj=document.getElementById('proj-sel').value;
   if(!proj){document.getElementById('form-body').style.display='none';document.getElementById('history-box').style.display='none';return;}
-  const date=getSelectedDate(),projNum=getProjNum();
-  if(projNum==="TEST-001"){document.getElementById("history-box").style.display="none";document.getElementById("edit-banner").classList.remove("show");currentMode="new";currentSeq=1;showFormBody();return;}
+  const projNum=getProjNum();
+  if(projNum==='TEST-001'){document.getElementById('history-box').style.display='none';document.getElementById('edit-banner').classList.remove('show');currentMode='new';currentSeq=1;showFormBody();return;}
+  const date=getSelectedDate();
   showLoading('제출 이력 확인 중...');
   try {
     const res=await fetch(`${SCRIPT_URL}?action=checkSubmit&date=${encodeURIComponent(date)}&projNum=${encodeURIComponent(projNum)}`).then(r=>r.json());
@@ -450,11 +462,9 @@ async function startEdit(){
   document.getElementById('edit-banner').classList.add('show');
   showLoading('기존 데이터 불러오는 중...');
   const date=getSelectedDate(),projNum=getProjNum();
-  if(projNum==="TEST-001"){document.getElementById("history-box").style.display="none";document.getElementById("edit-banner").classList.remove("show");currentMode="new";currentSeq=1;showFormBody();return;}
   try {
     const res=await fetch(`${SCRIPT_URL}?action=getSubmitData&date=${encodeURIComponent(date)}&projNum=${encodeURIComponent(projNum)}`).then(r=>r.json());
-    hideLoading();
-    document.getElementById('form-body').style.display='block';
+    hideLoading();document.getElementById('form-body').style.display='block';
     if(res.mainInfo&&res.mainInfo.workers){
       const workerNames=res.mainInfo.workers.split(',').map(s=>s.trim());
       document.querySelectorAll('#worker-wrap .chip').forEach(chip=>{if(workerNames.includes(chip.textContent.trim()))chip.classList.add('on');});
@@ -469,12 +479,18 @@ function resetForm(){
   document.getElementById('extra-workers').value='';
   document.getElementById('expense-list').innerHTML='';
   document.getElementById('equip-list').innerHTML='';
-  document.getElementById('preview-wrap').innerHTML='';
+  document.getElementById('receipt-preview').innerHTML='';
+  document.getElementById('invoice-preview').innerHTML='';
   document.getElementById('add-photo-btn').style.display='none';
+  document.getElementById('add-invoice-btn').style.display='none';
   document.getElementById('ot-chk').checked=false;
   document.getElementById('ot-wrap').style.display='none';
+  document.getElementById('no-expense-chk').checked=false;
+  document.getElementById('no-invoice-chk').checked=false;
+  document.getElementById('expense-body').classList.remove('disabled-section');
+  document.getElementById('invoice-body').classList.remove('disabled-section');
   document.getElementById('edit-banner').classList.remove('show');
-  processedFiles=[];expCount=0;eqCount=0;
+  receiptFiles=[];invoiceFiles=[];expCount=0;eqCount=0;
   makeTimes('t-start',5,18,'07:00');makeTimes('t-end',5,18,'16:00');
 }
 
@@ -486,6 +502,13 @@ function startNewForm(){
   document.getElementById('history-box').style.display='none';
   document.getElementById('form-body').style.display='none';
   currentMode='new';currentSeq=1;resetForm();window.scrollTo(0,0);
+}
+
+// 현재 선택된 카드 가져오기
+function getSelectedCard(){
+  const cardEl=document.querySelector('.card-chip.on');
+  if(!cardEl)return null;
+  return{cardCo:cardEl.dataset.cardco,last4:cardEl.dataset.last4,biz:cardEl.dataset.biz,isPersonal:cardEl.dataset.personal==='true'};
 }
 
 function addExpense(){
@@ -560,7 +583,22 @@ function calcVat(id){
   else box.style.display='none';
 }
 
-function addWatermark(file){
+function getWatermarkText(type){
+  const date=getSelectedDate();
+  const projNum=getProjNum()||'';
+  if(type==='receipt'){
+    // 카드 정보 포함
+    const cardEl=document.querySelector('.card-chip.on');
+    if(cardEl){
+      const short=cardShort(cardEl.dataset.cardco,cardEl.dataset.last4);
+      return`${date} / ${projNum} / ${short}`;
+    }
+    return`${date} / ${projNum}`;
+  }
+  return`${date} / ${projNum}`;
+}
+
+function addWatermark(file, type){
   return new Promise(resolve=>{
     const reader=new FileReader();
     reader.onload=e=>{
@@ -569,7 +607,7 @@ function addWatermark(file){
         const canvas=document.createElement('canvas');
         canvas.width=img.width;canvas.height=img.height;
         const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);
-        const watermark=`${getSelectedDate()} / ${getProjNum()||''}`;
+        const watermark=getWatermarkText(type);
         const fontSize=Math.max(20,Math.round(img.width*0.035));
         ctx.font=`bold ${fontSize}px sans-serif`;
         const padding=Math.round(img.width*0.03),textW=ctx.measureText(watermark).width,textH=fontSize,boxPad=Math.round(fontSize*0.4);
@@ -584,17 +622,20 @@ function addWatermark(file){
   });
 }
 
-async function previewFiles(input,isAdd){
-  const wrap=document.getElementById('preview-wrap');
-  if(!isAdd){wrap.innerHTML='';processedFiles=[];}
+async function previewFiles(input, type, isAdd){
+  const previewId = type==='receipt' ? 'receipt-preview' : 'invoice-preview';
+  const addBtnId = type==='receipt' ? 'add-photo-btn' : 'add-invoice-btn';
+  const wrap=document.getElementById(previewId);
+  if(!isAdd){wrap.innerHTML='';if(type==='receipt')receiptFiles=[];else invoiceFiles=[];}
   const files=Array.from(input.files);
   for(const f of files){
-    const result=await addWatermark(f);
-    processedFiles.push({dataUrl:result.dataUrl,name:result.name});
+    const result=await addWatermark(f,type);
+    if(type==='receipt')receiptFiles.push({dataUrl:result.dataUrl,name:result.name});
+    else invoiceFiles.push({dataUrl:result.dataUrl,name:result.name});
     const c=result.canvas;c.style.cssText='width:80px;height:80px;object-fit:cover;border-radius:8px;border:0.5px solid #eee';
     wrap.appendChild(c);
   }
-  document.getElementById('add-photo-btn').style.display='block';input.value='';
+  document.getElementById(addBtnId).style.display='block';input.value='';
 }
 
 function showLoading(msg){document.getElementById('loading-text').textContent=msg||'처리 중...';document.getElementById('loading').classList.add('show');}
@@ -614,6 +655,8 @@ function buildPayload(){
   const timeStart=document.getElementById('t-start').value,timeEnd=document.getElementById('t-end').value;
   const otChk=document.getElementById('ot-chk').checked;
   const overtime=otChk?`${document.getElementById('ot-start').value}~${document.getElementById('ot-end').value}`:'';
+  const noExpense=document.getElementById('no-expense-chk').checked;
+  const noInvoice=document.getElementById('no-invoice-chk').checked;
   const expenses=[];
   document.querySelectorAll('.item-box[id^="exp-"]').forEach(box=>{
     const id=box.id.replace('exp-','');
@@ -633,17 +676,20 @@ function buildPayload(){
     if(!typeEl)return;
     equips.push({type:typeEl.textContent,company,supplyAmt:supply,vatAmt:Math.round(supply*0.1),totalAmt:supply+Math.round(supply*0.1)});
   });
-  return{type:'expense',date:dateStr,projNum,projName,projBiz,workers,workerCount:selectedWorkers.length,timeStart,timeEnd,overtime,expenses,equips,imageCount:processedFiles.length,writer,submitTime,seq:currentSeq,isRevision:currentMode==='edit'};
+  return{type:'expense',date:dateStr,projNum,projName,projBiz,workers,workerCount:selectedWorkers.length,timeStart,timeEnd,overtime,expenses,equips,noExpense,noInvoice,receiptCount:receiptFiles.length,invoiceCount:invoiceFiles.length,writer,submitTime,seq:currentSeq,isRevision:currentMode==='edit'};
 }
 
 function showConfirm(){
   const proj=document.getElementById('proj-sel').value;
   const writer=document.getElementById('writer').value.trim();
+  const noExpense=document.getElementById('no-expense-chk').checked;
+  const noInvoice=document.getElementById('no-invoice-chk').checked;
   if(!proj){alert('프로젝트를 선택해주세요.');return;}
   if(!writer){alert('작성자를 입력해주세요.');return;}
-  if(processedFiles.length===0){alert('영수증 또는 증빙 사진을 첨부해주세요.');return;}
+  if(!noExpense&&receiptFiles.length===0){alert('영수증을 첨부하거나 "경비 사용 없음"을 체크해주세요.');return;}
   if(document.querySelectorAll('.warn-box.show input[type=checkbox]:not(:checked)').length>0){alert('카드 불일치 항목을 확인 후 체크해주세요.');return;}
   if(document.querySelectorAll('.no-receipt-box.show input[type=checkbox]:not(:checked)').length>0){alert('개인카드 영수증 첨부 확인 체크를 해주세요.');return;}
+
   submitPayload=buildPayload();
   let html=`
     <div class="confirm-row"><span class="confirm-label">날짜</span><span class="confirm-value">${submitPayload.date}</span></div>
@@ -652,22 +698,26 @@ function showConfirm(){
     <div class="confirm-row"><span class="confirm-label">작업자</span><span class="confirm-value">${submitPayload.workers||'미선택'} (${submitPayload.workerCount}명)</span></div>
     <div class="confirm-row"><span class="confirm-label">작업시간</span><span class="confirm-value">${submitPayload.timeStart}~${submitPayload.timeEnd}${submitPayload.overtime?` / 잔업 ${submitPayload.overtime}`:''}</span></div>
     <div class="confirm-row"><span class="confirm-label">작성자</span><span class="confirm-value">${submitPayload.writer}</span></div>`;
-  if(submitPayload.expenses.length>0){
+
+  if(submitPayload.noExpense){
+    html+=`<div class="confirm-row"><span class="confirm-label">경비</span><span class="confirm-value" style="color:#888">경비 사용 없음</span></div>`;
+  } else if(submitPayload.expenses.length>0){
     html+=`<div class="confirm-section"><div class="confirm-section-title">💳 경비 사용 내역</div>`;
     submitPayload.expenses.forEach(e=>{
       const badge=e.isPersonal?`<span class="badge badge-personal">개인(${e.userName})</span>`:`<span class="badge badge-corp">${e.cardCo}(${e.last4})</span>`;
       html+=`<div class="confirm-item">${e.item} ${badge}<br><strong>${Number(e.amount).toLocaleString()}원</strong></div>`;
     });
     html+=`</div>`;
+    html+=`<div class="confirm-row"><span class="confirm-label">영수증</span><span class="confirm-value">${receiptFiles.length}장 첨부</span></div>`;
   }
+
   if(submitPayload.equips.length>0){
     html+=`<div class="confirm-section"><div class="confirm-section-title">🚜 장비 / 외주 내역</div>`;
-    submitPayload.equips.forEach(e=>{
-      html+=`<div class="confirm-item">${e.type}${e.company?` / ${e.company}`:''}<br>공급가 <strong>${Number(e.supplyAmt).toLocaleString()}원</strong> / 합계 <strong>${Number(e.totalAmt).toLocaleString()}원</strong></div>`;
-    });
+    submitPayload.equips.forEach(e=>{html+=`<div class="confirm-item">${e.type}${e.company?` / ${e.company}`:''}<br>공급가 <strong>${Number(e.supplyAmt).toLocaleString()}원</strong> / 합계 <strong>${Number(e.totalAmt).toLocaleString()}원</strong></div>`;});
     html+=`</div>`;
+    html+=`<div class="confirm-row"><span class="confirm-label">명세서</span><span class="confirm-value">${noInvoice?'명세서 없음':invoiceFiles.length+'장 첨부'}</span></div>`;
   }
-  html+=`<div class="confirm-section"><div class="confirm-section-title">📷 영수증</div><div class="confirm-item">${processedFiles.length}장 첨부됨</div></div>`;
+
   document.getElementById('confirm-content').innerHTML=html;
   document.getElementById('main-form').style.display='none';
   document.getElementById('confirm-box').classList.add('show');
@@ -686,16 +736,25 @@ async function finalSubmit(){
   showLoading('데이터 저장 중...');
   try {
     await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(submitPayload)});
-    for(let i=0;i<processedFiles.length;i++){
-      showLoading(`영수증 업로드 중... (${i+1}/${processedFiles.length})`);
-      await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({type:'image',date:submitPayload.date,projNum:submitPayload.projNum,imageData:processedFiles[i].dataUrl,fileName:`${submitPayload.date}_${submitPayload.projNum}_${currentSeq}_${i+1}.jpg`})});
+
+    // 영수증 업로드
+    for(let i=0;i<receiptFiles.length;i++){
+      showLoading(`영수증 업로드 중... (${i+1}/${receiptFiles.length})`);
+      await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({type:'image',date:submitPayload.date,projNum:submitPayload.projNum,imageData:receiptFiles[i].dataUrl,fileName:`영수증_${submitPayload.date}_${submitPayload.projNum}_${i+1}.jpg`})});
     }
+
+    // 거래명세서 업로드
+    for(let i=0;i<invoiceFiles.length;i++){
+      showLoading(`거래명세서 업로드 중... (${i+1}/${invoiceFiles.length})`);
+      await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({type:'invoice',date:submitPayload.date,projNum:submitPayload.projNum,imageData:invoiceFiles[i].dataUrl,fileName:`명세서_${submitPayload.date}_${submitPayload.projNum}_${i+1}.jpg`})});
+    }
+
     hideLoading();
     document.getElementById('final-btn').disabled=false;
     document.getElementById('confirm-box').classList.remove('show');
     const box=document.getElementById('complete-box');box.classList.add('show');
     document.getElementById('complete-title').textContent=currentMode==='edit'?'✅ 수정 완료!':'✅ 최종 제출 완료!';
-    document.getElementById('complete-desc').textContent=`${submitPayload.projName} | ${submitPayload.writer} | 영수증 ${processedFiles.length}장`;
+    document.getElementById('complete-desc').textContent=`${submitPayload.projName} | ${submitPayload.writer}`;
     window.scrollTo(0,0);
     currentMode='new';currentSeq=1;submitPayload=null;
   } catch(err){
