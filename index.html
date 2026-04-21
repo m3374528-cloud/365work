@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta property="og:title" content="현장 작업일보">
 <meta property="og:description" content="삼육오컴퍼니 현장 작업일보 입력">
-<meta property="og:type" content="website">
 <title>현장 작업일보</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -33,9 +32,6 @@ input[type=date]{color:#1a1a1a}
 .warn-check label{font-size:12px;color:#A32D2D;cursor:pointer;line-height:1.4}
 .no-receipt-box{display:none;margin-top:8px;padding:10px 12px;background:#FAEEDA;border:0.5px solid #FAC775;border-radius:8px;font-size:12px;color:#633806;line-height:1.5}
 .no-receipt-box.show{display:block}
-.submit-btn{width:100%;padding:14px;background:#1D9E75;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:500;cursor:pointer;margin-top:4px}
-.submit-btn:hover{background:#0F6E56}
-.submit-btn:disabled{background:#aaa;cursor:not-allowed}
 .file-label{display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;border:0.5px dashed #ccc;border-radius:8px;color:#888;font-size:13px;cursor:pointer;margin-top:6px}
 .file-label:hover{background:#f5f5f0}
 .add-photo-btn{display:none;width:100%;padding:8px;border:0.5px dashed #1D9E75;border-radius:8px;background:transparent;color:#1D9E75;font-size:13px;cursor:pointer;margin-top:6px;text-align:center}
@@ -66,7 +62,6 @@ input[type=date]{color:#1a1a1a}
 .complete-title{font-size:18px;font-weight:500;color:#0F6E56;margin-bottom:8px}
 .complete-desc{font-size:13px;color:#1D9E75;margin-bottom:16px}
 .new-btn{width:100%;padding:12px;background:#1D9E75;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer}
-.new-btn:hover{background:#0F6E56}
 .history-box{background:#f5f5f0;border-radius:8px;padding:10px 12px;margin-top:8px;font-size:12px}
 .history-item{padding:6px 0;border-bottom:0.5px solid #ddd;display:flex;justify-content:space-between;align-items:center}
 .history-item:last-child{border-bottom:none}
@@ -75,6 +70,25 @@ input[type=date]{color:#1a1a1a}
 .btn-edit{background:#E6F1FB;color:#185FA5}
 .edit-banner{display:none;background:#E6F1FB;border:0.5px solid #185FA5;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#185FA5;text-align:center}
 .edit-banner.show{display:block}
+
+/* 확인 화면 */
+.confirm-box{display:none;background:#fff;border:0.5px solid #e0e0d8;border-radius:12px;padding:1rem;margin-bottom:12px}
+.confirm-box.show{display:block}
+.confirm-title{font-size:15px;font-weight:500;color:#1a1a1a;margin-bottom:12px;padding-bottom:8px;border-bottom:0.5px solid #eee}
+.confirm-row{display:flex;padding:6px 0;border-bottom:0.5px solid #f5f5f0;gap:8px}
+.confirm-label{font-size:12px;color:#888;min-width:60px;flex-shrink:0}
+.confirm-value{font-size:12px;color:#1a1a1a;flex:1;line-height:1.5}
+.confirm-section{margin-top:12px}
+.confirm-section-title{font-size:11px;font-weight:500;color:#888;margin-bottom:6px;padding:4px 0;border-bottom:0.5px solid #eee}
+.confirm-item{background:#f5f5f0;border-radius:8px;padding:8px 10px;margin-top:6px;font-size:12px;line-height:1.6}
+.confirm-btns{display:flex;gap:8px;margin-top:16px;padding-bottom:30px}
+.btn-back{flex:1;padding:14px;background:#f5f5f0;color:#555;border:none;border-radius:12px;font-size:14px;font-weight:500;cursor:pointer}
+.btn-final{flex:2;padding:14px;background:#1D9E75;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:500;cursor:pointer}
+.btn-final:disabled{background:#aaa;cursor:not-allowed}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:500;margin-left:4px}
+.badge-corp{background:#E6F1FB;color:#0C447C}
+.badge-personal{background:#FAEEDA;color:#633806}
+.preview-thumb{width:60px;height:60px;object-fit:cover;border-radius:6px;border:0.5px solid #eee}
 </style>
 </head>
 <body>
@@ -89,12 +103,24 @@ input[type=date]{color:#1a1a1a}
   <p id="today-date" style="font-size:12px;color:#888"></p>
 </div>
 
+<!-- 완료 화면 -->
 <div class="complete-box" id="complete-box">
-  <div class="complete-title" id="complete-title">✅ 제출 완료!</div>
+  <div class="complete-title" id="complete-title">✅ 최종 제출 완료!</div>
   <div class="complete-desc" id="complete-desc"></div>
   <button class="new-btn" onclick="startNewForm()">새 작업일보 작성하기</button>
 </div>
 
+<!-- 확인 화면 -->
+<div class="confirm-box" id="confirm-box">
+  <div class="confirm-title">📋 작업일보 확인</div>
+  <div id="confirm-content"></div>
+  <div class="confirm-btns">
+    <button class="btn-back" onclick="backToForm()">✏️ 수정하기</button>
+    <button class="btn-final" id="final-btn" onclick="finalSubmit()">최종 제출</button>
+  </div>
+</div>
+
+<!-- 입력 폼 -->
 <div id="main-form">
 
 <div class="section">
@@ -167,10 +193,10 @@ input[type=date]{color:#1a1a1a}
     <input type="file" id="receipt-input" accept="image/*" multiple style="display:none" onchange="previewFiles(this,false)">
     📷 사진 촬영 또는 갤러리 선택
   </label>
-  <label class="add-photo-btn" id="add-photo-btn">
-    <input type="file" id="add-receipt-input" accept="image/*" multiple style="display:none" onchange="previewFiles(this,true)">
+  <div class="add-photo-btn" id="add-photo-btn" onclick="document.getElementById('add-receipt-input').click()">
     📷 사진 추가 촬영
-  </label>
+    <input type="file" id="add-receipt-input" accept="image/*" multiple style="display:none" onchange="previewFiles(this,true)">
+  </div>
   <div class="preview-wrap" id="preview-wrap"></div>
   <p style="font-size:11px;color:#bbb;margin-top:6px">영수증이 없는 경우 반드시 경위 메모를 촬영하여 첨부해주세요</p>
 </div>
@@ -181,7 +207,7 @@ input[type=date]{color:#1a1a1a}
 </div>
 
 <div style="padding-bottom:30px">
-  <button class="submit-btn" id="submit-btn" onclick="submitForm()">작업일보 제출</button>
+  <button class="btn-final" id="submit-btn" onclick="showConfirm()" style="width:100%;padding:14px;font-size:15px">내용 확인하기</button>
 </div>
 
 </div>
@@ -194,14 +220,12 @@ let processedFiles=[];
 let currentMode='new';
 let currentSeq=1;
 let expCount=0,eqCount=0;
+let submitPayload=null;
 
 const todayObj=new Date();
 document.getElementById('today-date').textContent=todayObj.toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
 
-function getTodayStr(){
-  const y=todayObj.getFullYear(),m=String(todayObj.getMonth()+1).padStart(2,'0'),d=String(todayObj.getDate()).padStart(2,'0');
-  return`${y}.${m}.${d}`;
-}
+function getTodayStr(){const y=todayObj.getFullYear(),m=String(todayObj.getMonth()+1).padStart(2,'0'),d=String(todayObj.getDate()).padStart(2,'0');return`${y}.${m}.${d}`;}
 function getSelectedDate(){
   const v=document.getElementById('work-date').value;
   if(!v)return getTodayStr();
@@ -210,6 +234,7 @@ function getSelectedDate(){
 }
 function getProjNum(){const v=document.getElementById('proj-sel').value;return v?v.split('|')[1]:'';}
 function getProjBiz(){const v=document.getElementById('proj-sel').value;return v?v.split('|')[0]:'';}
+function getProjName(){const v=document.getElementById('proj-sel').value;return v?v.split('|')[2]:'';}
 
 async function loadMasterData(){
   showLoading('데이터 불러오는 중...');
@@ -226,9 +251,7 @@ async function loadMasterData(){
     masterData.equipments=equip.data||[];
     masterData.cards=cards.data||[];
     masterData.expenseItems=items.data||[];
-    buildProjectSelect();
-    buildWorkerChips();
-    buildTimePickers();
+    buildProjectSelect();buildWorkerChips();buildTimePickers();
   } catch(e){console.error(e);}
   hideLoading();
   document.getElementById('work-date').value=todayObj.toISOString().split('T')[0];
@@ -246,13 +269,10 @@ function buildProjectSelect(){
 }
 
 function buildWorkerChips(){
-  const wrap=document.getElementById('worker-wrap');
-  wrap.innerHTML='';
+  const wrap=document.getElementById('worker-wrap');wrap.innerHTML='';
   masterData.workers.forEach(w=>{
-    const div=document.createElement('div');
-    div.className='chip';div.textContent=w.name;
-    div.onclick=()=>div.classList.toggle('on');
-    wrap.appendChild(div);
+    const div=document.createElement('div');div.className='chip';div.textContent=w.name;
+    div.onclick=()=>div.classList.toggle('on');wrap.appendChild(div);
   });
 }
 
@@ -276,58 +296,40 @@ function toggleOT(cb){document.getElementById('ot-wrap').style.display=cb.checke
 async function onDateOrProjChange(){
   const proj=document.getElementById('proj-sel').value;
   if(!proj){document.getElementById('form-body').style.display='none';document.getElementById('history-box').style.display='none';return;}
-  const date=getSelectedDate();
-  const projNum=getProjNum();
+  const date=getSelectedDate(),projNum=getProjNum();
   showLoading('제출 이력 확인 중...');
   try {
     const res=await fetch(`${SCRIPT_URL}?action=checkSubmit&date=${encodeURIComponent(date)}&projNum=${encodeURIComponent(projNum)}`).then(r=>r.json());
     hideLoading();
-    if(res.data&&res.data.length>0){
-      showHistory(res.data);
-    } else {
-      document.getElementById('history-box').style.display='none';
-      document.getElementById('edit-banner').classList.remove('show');
-      currentMode='new';currentSeq=1;
-      showFormBody();
-    }
+    if(res.data&&res.data.length>0){showHistory(res.data);}
+    else{document.getElementById('history-box').style.display='none';document.getElementById('edit-banner').classList.remove('show');currentMode='new';currentSeq=1;showFormBody();}
   } catch(e){hideLoading();showFormBody();}
 }
 
 function showHistory(data){
-  const box=document.getElementById('history-box');
-  const list=document.getElementById('history-list');
-  box.style.display='block';
-  document.getElementById('form-body').style.display='none';
+  const box=document.getElementById('history-box'),list=document.getElementById('history-list');
+  box.style.display='block';document.getElementById('form-body').style.display='none';
   let html='';
-  data.forEach((h,i)=>{
-    html+=`<div class="history-item"><span style="font-weight:500">${h.writer}</span><span style="color:#888">${h.submitTime}</span></div>`;
-  });
-  list.innerHTML=html;
-  currentSeq=data[data.length-1].seq;
+  data.forEach(h=>{html+=`<div class="history-item"><span style="font-weight:500">${h.writer}</span><span style="color:#888">${h.submitTime}</span></div>`;});
+  list.innerHTML=html;currentSeq=data[data.length-1].seq;
 }
 
-function showFormBody(){
-  document.getElementById('form-body').style.display='block';
-  resetForm();
-}
+function showFormBody(){document.getElementById('form-body').style.display='block';resetForm();}
 
 async function startEdit(){
   currentMode='edit';
   document.getElementById('history-box').style.display='none';
   document.getElementById('edit-banner').classList.add('show');
   showLoading('기존 데이터 불러오는 중...');
-  const date=getSelectedDate();const projNum=getProjNum();
+  const date=getSelectedDate(),projNum=getProjNum();
   try {
     const res=await fetch(`${SCRIPT_URL}?action=getSubmitData&date=${encodeURIComponent(date)}&projNum=${encodeURIComponent(projNum)}`).then(r=>r.json());
     hideLoading();
     document.getElementById('form-body').style.display='block';
-    document.getElementById('submit-btn').textContent='수정 제출';
-    document.getElementById('submit-btn').style.background='#185FA5';
+    document.getElementById('submit-btn').textContent='내용 확인하기';
     if(res.mainInfo&&res.mainInfo.workers){
       const workerNames=res.mainInfo.workers.split(',').map(s=>s.trim());
-      document.querySelectorAll('#worker-wrap .chip').forEach(chip=>{
-        if(workerNames.includes(chip.textContent.trim()))chip.classList.add('on');
-      });
+      document.querySelectorAll('#worker-wrap .chip').forEach(chip=>{if(workerNames.includes(chip.textContent.trim()))chip.classList.add('on');});
       if(res.mainInfo.timeStart)document.getElementById('t-start').value=res.mainInfo.timeStart.trim();
       if(res.mainInfo.timeEnd)document.getElementById('t-end').value=res.mainInfo.timeEnd.trim();
     }
@@ -343,7 +345,7 @@ function resetForm(){
   document.getElementById('add-photo-btn').style.display='none';
   document.getElementById('ot-chk').checked=false;
   document.getElementById('ot-wrap').style.display='none';
-  document.getElementById('submit-btn').textContent='작업일보 제출';
+  document.getElementById('submit-btn').textContent='내용 확인하기';
   document.getElementById('submit-btn').style.background='#1D9E75';
   document.getElementById('edit-banner').classList.remove('show');
   processedFiles=[];expCount=0;eqCount=0;
@@ -352,19 +354,17 @@ function resetForm(){
 
 function startNewForm(){
   document.getElementById('complete-box').classList.remove('show');
+  document.getElementById('confirm-box').classList.remove('show');
   document.getElementById('main-form').style.display='block';
   document.getElementById('proj-sel').value='';
   document.getElementById('history-box').style.display='none';
   document.getElementById('form-body').style.display='none';
-  currentMode='new';currentSeq=1;
-  resetForm();
-  window.scrollTo(0,0);
+  currentMode='new';currentSeq=1;resetForm();window.scrollTo(0,0);
 }
 
 function addExpense(){
   expCount++;const id=expCount;
-  const div=document.createElement('div');
-  div.className='item-box';div.id='exp-'+id;
+  const div=document.createElement('div');div.className='item-box';div.id='exp-'+id;
   const cardHtml=masterData.cards.map(c=>`<div class="card-chip" data-biz="${c.biz}" data-cardco="${c.cardCo}" data-last4="${c.last4}" data-personal="false" onclick="selCard(this,'${id}')">${c.cardCo}(${c.last4})</div>`).join('');
   const itemHtml=masterData.expenseItems.map(i=>`<option>${i}</option>`).join('');
   div.innerHTML=`
@@ -430,12 +430,8 @@ function calcVat(id){
   const supply=parseInt(document.getElementById('supply-'+id).value)||0;
   const vat=Math.round(supply*0.1),total=supply+vat;
   const box=document.getElementById('vat-box-'+id);
-  if(supply>0){
-    box.style.display='block';
-    document.getElementById('vat-supply-'+id).textContent=supply.toLocaleString()+'원';
-    document.getElementById('vat-tax-'+id).textContent=vat.toLocaleString()+'원';
-    document.getElementById('vat-total-'+id).textContent=total.toLocaleString()+'원';
-  } else box.style.display='none';
+  if(supply>0){box.style.display='block';document.getElementById('vat-supply-'+id).textContent=supply.toLocaleString()+'원';document.getElementById('vat-tax-'+id).textContent=vat.toLocaleString()+'원';document.getElementById('vat-total-'+id).textContent=total.toLocaleString()+'원';}
+  else box.style.display='none';
 }
 
 function addWatermark(file){
@@ -446,24 +442,15 @@ function addWatermark(file){
       img.onload=()=>{
         const canvas=document.createElement('canvas');
         canvas.width=img.width;canvas.height=img.height;
-        const ctx=canvas.getContext('2d');
-        ctx.drawImage(img,0,0);
+        const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);
         const watermark=`${getSelectedDate()} / ${getProjNum()||''}`;
         const fontSize=Math.max(20,Math.round(img.width*0.035));
         ctx.font=`bold ${fontSize}px sans-serif`;
-        const padding=Math.round(img.width*0.03);
-        const textW=ctx.measureText(watermark).width,textH=fontSize;
-        const boxPad=Math.round(fontSize*0.4);
+        const padding=Math.round(img.width*0.03),textW=ctx.measureText(watermark).width,textH=fontSize,boxPad=Math.round(fontSize*0.4);
         const boxX=(img.width-textW)/2-boxPad,boxY=img.height-padding-textH-boxPad*2;
-        ctx.fillStyle='rgba(0,0,0,0.45)';
-        ctx.beginPath();ctx.roundRect(boxX,boxY,textW+boxPad*2,textH+boxPad*2,6);ctx.fill();
-        ctx.fillStyle='rgba(255,255,255,0.92)';ctx.textBaseline='top';
-        ctx.fillText(watermark,(img.width-textW)/2,boxY+boxPad);
-        canvas.toBlob(blob=>{
-          const r2=new FileReader();
-          r2.onload=e2=>resolve({dataUrl:e2.target.result,canvas,name:file.name});
-          r2.readAsDataURL(blob);
-        },'image/jpeg',0.85);
+        ctx.fillStyle='rgba(0,0,0,0.45)';ctx.beginPath();ctx.roundRect(boxX,boxY,textW+boxPad*2,textH+boxPad*2,6);ctx.fill();
+        ctx.fillStyle='rgba(255,255,255,0.92)';ctx.textBaseline='top';ctx.fillText(watermark,(img.width-textW)/2,boxY+boxPad);
+        canvas.toBlob(blob=>{const r2=new FileReader();r2.onload=e2=>resolve({dataUrl:e2.target.result,canvas,name:file.name});r2.readAsDataURL(blob);},'image/jpeg',0.85);
       };
       img.src=e.target.result;
     };
@@ -478,43 +465,29 @@ async function previewFiles(input,isAdd){
   for(const f of files){
     const result=await addWatermark(f);
     processedFiles.push({dataUrl:result.dataUrl,name:result.name});
-    const c=result.canvas;
-    c.style.cssText='width:80px;height:80px;object-fit:cover;border-radius:8px;border:0.5px solid #eee';
+    const c=result.canvas;c.style.cssText='width:80px;height:80px;object-fit:cover;border-radius:8px;border:0.5px solid #eee';
     wrap.appendChild(c);
   }
-  document.getElementById('add-photo-btn').style.display='block';
-  input.value='';
+  document.getElementById('add-photo-btn').style.display='block';input.value='';
 }
-
-document.getElementById('add-photo-btn').onclick=()=>document.getElementById('add-receipt-input').click();
 
 function showLoading(msg){document.getElementById('loading-text').textContent=msg||'처리 중...';document.getElementById('loading').classList.add('show');}
 function hideLoading(){document.getElementById('loading').classList.remove('show');}
 
-async function submitForm(){
+function buildPayload(){
   const proj=document.getElementById('proj-sel').value;
   const writer=document.getElementById('writer').value.trim();
-  if(!proj){alert('프로젝트를 선택해주세요.');return;}
-  if(!writer){alert('작성자를 입력해주세요.');return;}
-  if(processedFiles.length===0){alert('영수증 또는 증빙 사진을 첨부해주세요.');return;}
-  if(document.querySelectorAll('.warn-box.show input[type=checkbox]:not(:checked)').length>0){alert('카드 불일치 항목을 확인 후 체크해주세요.');return;}
-  if(document.querySelectorAll('.no-receipt-box.show input[type=checkbox]:not(:checked)').length>0){alert('개인카드 영수증 첨부 확인 체크를 해주세요.');return;}
-
   const projParts=proj.split('|');
   const projBiz=projParts[0]||'',projNum=projParts[1]||'',projName=projParts[2]||'';
   const dateStr=getSelectedDate();
   const submitTime=new Date().toLocaleString('ko-KR');
-
   const selectedWorkers=Array.from(document.querySelectorAll('#worker-wrap .chip.on')).map(c=>c.textContent);
   const extra=document.getElementById('extra-workers').value.trim();
   if(extra)selectedWorkers.push(...extra.split(',').map(s=>s.trim()).filter(Boolean));
   const workers=selectedWorkers.join(', ');
-
-  const timeStart=document.getElementById('t-start').value;
-  const timeEnd=document.getElementById('t-end').value;
+  const timeStart=document.getElementById('t-start').value,timeEnd=document.getElementById('t-end').value;
   const otChk=document.getElementById('ot-chk').checked;
   const overtime=otChk?`${document.getElementById('ot-start').value}~${document.getElementById('ot-end').value}`:'';
-
   const expenses=[];
   document.querySelectorAll('.item-box[id^="exp-"]').forEach(box=>{
     const id=box.id.replace('exp-','');
@@ -525,7 +498,6 @@ async function submitForm(){
     const isPersonal=cardEl.dataset.personal==='true';
     expenses.push({cardCo:cardEl.dataset.cardco,last4:cardEl.dataset.last4,biz:cardEl.dataset.biz,isPersonal,userName:isPersonal?(document.getElementById('pname-'+id)?.value||'미입력'):'',item,amount:amt});
   });
-
   const equips=[];
   document.querySelectorAll('.item-box[id^="eq-"]').forEach(box=>{
     const id=box.id.replace('eq-','');
@@ -535,31 +507,81 @@ async function submitForm(){
     if(!typeEl)return;
     equips.push({type:typeEl.textContent,company,supplyAmt:supply,vatAmt:Math.round(supply*0.1),totalAmt:supply+Math.round(supply*0.1)});
   });
+  return{type:'expense',date:dateStr,projNum,projName,projBiz,workers,workerCount:selectedWorkers.length,timeStart,timeEnd,overtime,expenses,equips,imageCount:processedFiles.length,writer,submitTime,seq:currentSeq,isRevision:currentMode==='edit'};
+}
 
-  const payload={type:'expense',date:dateStr,projNum,projName,projBiz,workers,workerCount:selectedWorkers.length,timeStart,timeEnd,overtime,expenses,equips,imageCount:processedFiles.length,writer,submitTime,seq:currentSeq,isRevision:currentMode==='edit'};
+function showConfirm(){
+  const proj=document.getElementById('proj-sel').value;
+  const writer=document.getElementById('writer').value.trim();
+  if(!proj){alert('프로젝트를 선택해주세요.');return;}
+  if(!writer){alert('작성자를 입력해주세요.');return;}
+  if(processedFiles.length===0){alert('영수증 또는 증빙 사진을 첨부해주세요.');return;}
+  if(document.querySelectorAll('.warn-box.show input[type=checkbox]:not(:checked)').length>0){alert('카드 불일치 항목을 확인 후 체크해주세요.');return;}
+  if(document.querySelectorAll('.no-receipt-box.show input[type=checkbox]:not(:checked)').length>0){alert('개인카드 영수증 첨부 확인 체크를 해주세요.');return;}
 
+  submitPayload=buildPayload();
+
+  // 확인 화면 내용 생성
+  let html=`
+    <div class="confirm-row"><span class="confirm-label">날짜</span><span class="confirm-value">${submitPayload.date}</span></div>
+    <div class="confirm-row"><span class="confirm-label">현장</span><span class="confirm-value">${submitPayload.projName}</span></div>
+    <div class="confirm-row"><span class="confirm-label">프로젝트</span><span class="confirm-value">${submitPayload.projNum}</span></div>
+    <div class="confirm-row"><span class="confirm-label">작업자</span><span class="confirm-value">${submitPayload.workers||'미선택'} (${submitPayload.workerCount}명)</span></div>
+    <div class="confirm-row"><span class="confirm-label">작업시간</span><span class="confirm-value">${submitPayload.timeStart}~${submitPayload.timeEnd}${submitPayload.overtime?` / 잔업 ${submitPayload.overtime}`:''}</span></div>
+    <div class="confirm-row"><span class="confirm-label">작성자</span><span class="confirm-value">${submitPayload.writer}</span></div>`;
+
+  if(submitPayload.expenses.length>0){
+    html+=`<div class="confirm-section"><div class="confirm-section-title">💳 경비 사용 내역</div>`;
+    submitPayload.expenses.forEach(e=>{
+      const badge=e.isPersonal?`<span class="badge badge-personal">개인(${e.userName})</span>`:`<span class="badge badge-corp">${e.cardCo}(${e.last4})</span>`;
+      html+=`<div class="confirm-item">${e.item} ${badge}<br><strong>${Number(e.amount).toLocaleString()}원</strong></div>`;
+    });
+    html+=`</div>`;
+  }
+
+  if(submitPayload.equips.length>0){
+    html+=`<div class="confirm-section"><div class="confirm-section-title">🚜 장비 / 외주 내역</div>`;
+    submitPayload.equips.forEach(e=>{
+      html+=`<div class="confirm-item">${e.type} ${e.company?`/ ${e.company}`:''}<br>공급가 <strong>${Number(e.supplyAmt).toLocaleString()}원</strong> / 합계 <strong>${Number(e.totalAmt).toLocaleString()}원</strong></div>`;
+    });
+    html+=`</div>`;
+  }
+
+  html+=`<div class="confirm-section"><div class="confirm-section-title">📷 영수증</div><div class="confirm-item">${processedFiles.length}장 첨부됨</div></div>`;
+
+  document.getElementById('confirm-content').innerHTML=html;
+  document.getElementById('main-form').style.display='none';
+  document.getElementById('confirm-box').classList.add('show');
+  window.scrollTo(0,0);
+}
+
+function backToForm(){
+  document.getElementById('confirm-box').classList.remove('show');
+  document.getElementById('main-form').style.display='block';
+  window.scrollTo(0,0);
+}
+
+async function finalSubmit(){
+  if(!submitPayload)return;
+  document.getElementById('final-btn').disabled=true;
   showLoading('데이터 저장 중...');
-  document.getElementById('submit-btn').disabled=true;
-
   try {
-    await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payload)});
+    await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(submitPayload)});
     for(let i=0;i<processedFiles.length;i++){
       showLoading(`영수증 업로드 중... (${i+1}/${processedFiles.length})`);
-      await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({type:'image',date:dateStr,projNum,imageData:processedFiles[i].dataUrl,fileName:`${dateStr}_${projNum}_${currentSeq}_${i+1}.jpg`})});
+      await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({type:'image',date:submitPayload.date,projNum:submitPayload.projNum,imageData:processedFiles[i].dataUrl,fileName:`${submitPayload.date}_${submitPayload.projNum}_${currentSeq}_${i+1}.jpg`})});
     }
     hideLoading();
-    document.getElementById('submit-btn').disabled=false;
-    document.getElementById('main-form').style.display='none';
-    const box=document.getElementById('complete-box');
-    box.classList.add('show');
-    document.getElementById('complete-title').textContent=currentMode==='edit'?'✅ 수정 완료!':'✅ 제출 완료!';
-    document.getElementById('complete-desc').textContent=`${projName} | ${writer} | 영수증 ${processedFiles.length}장`;
+    document.getElementById('final-btn').disabled=false;
+    document.getElementById('confirm-box').classList.remove('show');
+    const box=document.getElementById('complete-box');box.classList.add('show');
+    document.getElementById('complete-title').textContent=currentMode==='edit'?'✅ 수정 완료!':'✅ 최종 제출 완료!';
+    document.getElementById('complete-desc').textContent=`${submitPayload.projName} | ${submitPayload.writer} | 영수증 ${processedFiles.length}장`;
     window.scrollTo(0,0);
-    currentMode='new';currentSeq=1;
+    currentMode='new';currentSeq=1;submitPayload=null;
   } catch(err){
-    hideLoading();
-    alert('제출 중 오류가 발생했습니다.\n'+err.message);
-    document.getElementById('submit-btn').disabled=false;
+    hideLoading();alert('제출 중 오류가 발생했습니다.\n'+err.message);
+    document.getElementById('final-btn').disabled=false;
   }
 }
 
