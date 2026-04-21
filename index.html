@@ -8,7 +8,12 @@
 <title>현장 작업일보</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;color:#1a1a1a;background:#f5f5f0;padding:12px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;color:#1a1a1a;background:#f5f5f0;padding:0}
+.tab-bar{display:flex;background:#fff;border-bottom:0.5px solid #e0e0d8;position:sticky;top:0;z-index:100}
+.tab{flex:1;padding:14px;text-align:center;font-size:14px;font-weight:500;color:#888;cursor:pointer;border-bottom:2px solid transparent}
+.tab.on{color:#1D9E75;border-bottom:2px solid #1D9E75}
+.page{display:none;padding:12px}
+.page.on{display:block}
 .section{background:#fff;border:0.5px solid #e0e0d8;border-radius:12px;padding:1rem;margin-bottom:12px}
 .sec-title{font-size:12px;font-weight:500;color:#888;margin-bottom:10px;padding-bottom:6px;border-bottom:0.5px solid #eee}
 .chip{padding:7px 12px;border-radius:20px;border:0.5px solid #ccc;font-size:12px;cursor:pointer;background:#fff;color:#1a1a1a;transition:all 0.15s;white-space:nowrap}
@@ -70,8 +75,6 @@ input[type=date]{color:#1a1a1a}
 .btn-edit{background:#E6F1FB;color:#185FA5}
 .edit-banner{display:none;background:#E6F1FB;border:0.5px solid #185FA5;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#185FA5;text-align:center}
 .edit-banner.show{display:block}
-
-/* 확인 화면 */
 .confirm-box{display:none;background:#fff;border:0.5px solid #e0e0d8;border-radius:12px;padding:1rem;margin-bottom:12px}
 .confirm-box.show{display:block}
 .confirm-title{font-size:15px;font-weight:500;color:#1a1a1a;margin-bottom:12px;padding-bottom:8px;border-bottom:0.5px solid #eee}
@@ -88,7 +91,16 @@ input[type=date]{color:#1a1a1a}
 .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:500;margin-left:4px}
 .badge-corp{background:#E6F1FB;color:#0C447C}
 .badge-personal{background:#FAEEDA;color:#633806}
-.preview-thumb{width:60px;height:60px;object-fit:cover;border-radius:6px;border:0.5px solid #eee}
+
+/* 확인 탭 */
+.record-card{background:#fff;border:0.5px solid #e0e0d8;border-radius:12px;padding:1rem;margin-bottom:10px;cursor:pointer;transition:all 0.15s}
+.record-card:hover{background:#f5f5f0}
+.record-card-title{font-size:14px;font-weight:500;color:#1a1a1a;margin-bottom:4px}
+.record-card-sub{font-size:12px;color:#888}
+.record-detail{display:none}
+.record-detail.show{display:block}
+.back-btn{width:100%;padding:12px;background:#f5f5f0;color:#555;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:12px}
+.empty-state{text-align:center;padding:40px 20px;color:#888;font-size:13px}
 </style>
 </head>
 <body>
@@ -98,19 +110,26 @@ input[type=date]{color:#1a1a1a}
   <div class="loading-text" id="loading-text">불러오는 중...</div>
 </div>
 
+<!-- 탭 바 -->
+<div class="tab-bar">
+  <div class="tab on" id="tab-write" onclick="switchTab('write')">✏️ 작업일보 작성</div>
+  <div class="tab" id="tab-view" onclick="switchTab('view')">📋 작업일보 확인</div>
+</div>
+
+<!-- 작성 탭 -->
+<div class="page on" id="page-write">
+
 <div style="padding:12px 0 4px">
   <p style="font-size:16px;font-weight:500;margin-bottom:2px">현장 작업일보</p>
   <p id="today-date" style="font-size:12px;color:#888"></p>
 </div>
 
-<!-- 완료 화면 -->
 <div class="complete-box" id="complete-box">
   <div class="complete-title" id="complete-title">✅ 최종 제출 완료!</div>
   <div class="complete-desc" id="complete-desc"></div>
   <button class="new-btn" onclick="startNewForm()">새 작업일보 작성하기</button>
 </div>
 
-<!-- 확인 화면 -->
 <div class="confirm-box" id="confirm-box">
   <div class="confirm-title">📋 작업일보 확인</div>
   <div id="confirm-content"></div>
@@ -120,14 +139,11 @@ input[type=date]{color:#1a1a1a}
   </div>
 </div>
 
-<!-- 입력 폼 -->
 <div id="main-form">
-
 <div class="section">
   <div class="sec-title">작업 날짜 <span class="req">*</span></div>
   <input type="date" id="work-date" onchange="onDateOrProjChange()">
 </div>
-
 <div class="section">
   <div class="sec-title">프로젝트 번호 <span class="req">*</span></div>
   <select id="proj-sel" onchange="onDateOrProjChange()">
@@ -141,18 +157,14 @@ input[type=date]{color:#1a1a1a}
     </div>
   </div>
 </div>
-
 <div class="edit-banner" id="edit-banner">✏️ 수정 모드 — 기존 내용을 수정 후 제출하세요</div>
-
 <div id="form-body" style="display:none">
-
 <div class="section">
   <div class="sec-title">투입 작업자</div>
   <div class="chip-wrap" id="worker-wrap"></div>
   <div class="lbl">추가 인원</div>
   <input type="text" id="extra-workers" placeholder="추가 작업자 이름 입력 (쉼표로 구분)">
 </div>
-
 <div class="section">
   <div class="sec-title">작업 시간</div>
   <div class="time-row">
@@ -173,19 +185,16 @@ input[type=date]{color:#1a1a1a}
     </div>
   </div>
 </div>
-
 <div class="section">
   <div class="sec-title">경비 사용 내역</div>
   <div id="expense-list"></div>
   <button class="add-btn" onclick="addExpense()">+ 경비 항목 추가</button>
 </div>
-
 <div class="section">
   <div class="sec-title">장비 / 외주 사용 내역</div>
   <div id="equip-list"></div>
   <button class="add-btn" onclick="addEquip()">+ 항목 추가</button>
 </div>
-
 <div class="section">
   <div class="sec-title">영수증 / 거래명세서 <span class="req">*</span></div>
   <p style="font-size:11px;color:#888;margin-bottom:6px">사진 하단에 날짜 및 프로젝트 번호가 자동으로 표시됩니다</p>
@@ -200,17 +209,40 @@ input[type=date]{color:#1a1a1a}
   <div class="preview-wrap" id="preview-wrap"></div>
   <p style="font-size:11px;color:#bbb;margin-top:6px">영수증이 없는 경우 반드시 경위 메모를 촬영하여 첨부해주세요</p>
 </div>
-
 <div class="section">
   <div class="sec-title">작성자 <span class="req">*</span></div>
   <input type="text" id="writer" placeholder="작성자 이름 입력">
 </div>
-
 <div style="padding-bottom:30px">
   <button class="btn-final" id="submit-btn" onclick="showConfirm()" style="width:100%;padding:14px;font-size:15px">내용 확인하기</button>
 </div>
-
 </div>
+</div>
+</div>
+
+<!-- 확인 탭 -->
+<div class="page" id="page-view">
+  <div style="padding:12px 0 4px">
+    <p style="font-size:16px;font-weight:500;margin-bottom:2px">작업일보 확인</p>
+  </div>
+
+  <!-- 목록 화면 -->
+  <div id="view-list">
+    <div class="section">
+      <div class="sec-title">날짜 선택</div>
+      <input type="date" id="view-date" onchange="loadRecords()">
+    </div>
+    <div id="record-list"></div>
+  </div>
+
+  <!-- 상세 화면 -->
+  <div id="view-detail" style="display:none">
+    <button class="back-btn" onclick="backToList()">← 목록으로</button>
+    <div class="confirm-box show" id="detail-content">
+      <div class="confirm-title">📋 작업일보 확인</div>
+      <div id="detail-body"></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -234,8 +266,103 @@ function getSelectedDate(){
 }
 function getProjNum(){const v=document.getElementById('proj-sel').value;return v?v.split('|')[1]:'';}
 function getProjBiz(){const v=document.getElementById('proj-sel').value;return v?v.split('|')[0]:'';}
-function getProjName(){const v=document.getElementById('proj-sel').value;return v?v.split('|')[2]:'';}
 
+// 탭 전환
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.getElementById('tab-'+tab).classList.add('on');
+  document.getElementById('page-'+tab).classList.add('on');
+  if(tab==='view'){
+    const today=todayObj.toISOString().split('T')[0];
+    document.getElementById('view-date').value=today;
+    loadRecords();
+  }
+}
+
+// 확인 탭 - 목록 불러오기
+async function loadRecords(){
+  const v=document.getElementById('view-date').value;
+  if(!v)return;
+  const d=new Date(v+'T00:00:00');
+  const dateStr=`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+  showLoading('작업일보 불러오는 중...');
+  try {
+    const res=await fetch(`${SCRIPT_URL}?action=getRecordsByDate&date=${encodeURIComponent(dateStr)}`).then(r=>r.json());
+    hideLoading();
+    const list=document.getElementById('record-list');
+    if(!res.data||res.data.length===0){
+      list.innerHTML=`<div class="empty-state">📭 ${dateStr}<br>제출된 작업일보가 없어요</div>`;
+      return;
+    }
+    list.innerHTML='';
+    res.data.forEach(r=>{
+      const card=document.createElement('div');
+      card.className='record-card';
+      card.innerHTML=`
+        <div class="record-card-title">✅ ${r.projName}</div>
+        <div class="record-card-sub">${r.projNum} | 작업자 ${r.workerCount}명 | ${r.timeRange}</div>
+        <div class="record-card-sub" style="margin-top:2px">총경비 ${Number(r.totalAmt).toLocaleString()}원 | ${r.writer} | ${r.submitTime}</div>`;
+      card.onclick=()=>showDetail(r.projNum, dateStr);
+      list.appendChild(card);
+    });
+  } catch(e){hideLoading();document.getElementById('record-list').innerHTML=`<div class="empty-state">데이터를 불러오지 못했어요</div>`;}
+}
+
+// 확인 탭 - 상세 보기
+async function showDetail(projNum, dateStr){
+  showLoading('상세 내용 불러오는 중...');
+  try {
+    const res=await fetch(`${SCRIPT_URL}?action=getSubmitData&date=${encodeURIComponent(dateStr)}&projNum=${encodeURIComponent(projNum)}`).then(r=>r.json());
+    const summary=await fetch(`${SCRIPT_URL}?action=checkSubmit&date=${encodeURIComponent(dateStr)}&projNum=${encodeURIComponent(projNum)}`).then(r=>r.json());
+    hideLoading();
+
+    const proj=masterData.projects.find(p=>p.projNum===projNum)||{projName:projNum};
+    const mainInfo=res.mainInfo||{};
+    const submitInfo=summary.data&&summary.data.length>0?summary.data[0]:{};
+
+    let html=`
+      <div class="confirm-row"><span class="confirm-label">날짜</span><span class="confirm-value">${dateStr}</span></div>
+      <div class="confirm-row"><span class="confirm-label">현장</span><span class="confirm-value">${proj.projName||projNum}</span></div>
+      <div class="confirm-row"><span class="confirm-label">프로젝트</span><span class="confirm-value">${projNum}</span></div>
+      <div class="confirm-row"><span class="confirm-label">작업자</span><span class="confirm-value">${mainInfo.workers||'-'}</span></div>
+      <div class="confirm-row"><span class="confirm-label">작업시간</span><span class="confirm-value">${mainInfo.timeStart||''}~${mainInfo.timeEnd||''}${mainInfo.overtime&&mainInfo.overtime!=='-'?` / 잔업 ${mainInfo.overtime}`:''}</span></div>
+      <div class="confirm-row"><span class="confirm-label">작성자</span><span class="confirm-value">${submitInfo.writer||'-'}</span></div>`;
+
+    if(res.expenses&&res.expenses.length>0){
+      html+=`<div class="confirm-section"><div class="confirm-section-title">💳 경비 사용 내역</div>`;
+      res.expenses.forEach(e=>{
+        const badge=e.isPersonal?`<span class="badge badge-personal">개인(${e.userName})</span>`:`<span class="badge badge-corp">${e.cardCo}(${e.last4})</span>`;
+        html+=`<div class="confirm-item">${e.item} ${badge}<br><strong>${Number(e.amount).toLocaleString()}원</strong></div>`;
+      });
+      html+=`</div>`;
+    }
+
+    if(res.equips&&res.equips.length>0){
+      html+=`<div class="confirm-section"><div class="confirm-section-title">🚜 장비 / 외주 내역</div>`;
+      res.equips.forEach(e=>{
+        html+=`<div class="confirm-item">${e.type}${e.company?` / ${e.company}`:''}<br>공급가 <strong>${Number(e.supplyAmt).toLocaleString()}원</strong> / 합계 <strong>${Number(e.totalAmt).toLocaleString()}원</strong></div>`;
+      });
+      html+=`</div>`;
+    }
+
+    const imgCount=submitInfo.imgCount||0;
+    html+=`<div class="confirm-section"><div class="confirm-section-title">📷 영수증</div><div class="confirm-item">${summary.data&&summary.data[0]?summary.data[0].imgCount||'확인 필요':'확인 필요'}장 첨부됨</div></div>`;
+
+    document.getElementById('detail-body').innerHTML=html;
+    document.getElementById('view-list').style.display='none';
+    document.getElementById('view-detail').style.display='block';
+    window.scrollTo(0,0);
+  } catch(e){hideLoading();alert('상세 내용을 불러오지 못했어요');}
+}
+
+function backToList(){
+  document.getElementById('view-detail').style.display='none';
+  document.getElementById('view-list').style.display='block';
+  window.scrollTo(0,0);
+}
+
+// 마스터 데이터 로드
 async function loadMasterData(){
   showLoading('데이터 불러오는 중...');
   try {
@@ -326,7 +453,6 @@ async function startEdit(){
     const res=await fetch(`${SCRIPT_URL}?action=getSubmitData&date=${encodeURIComponent(date)}&projNum=${encodeURIComponent(projNum)}`).then(r=>r.json());
     hideLoading();
     document.getElementById('form-body').style.display='block';
-    document.getElementById('submit-btn').textContent='내용 확인하기';
     if(res.mainInfo&&res.mainInfo.workers){
       const workerNames=res.mainInfo.workers.split(',').map(s=>s.trim());
       document.querySelectorAll('#worker-wrap .chip').forEach(chip=>{if(workerNames.includes(chip.textContent.trim()))chip.classList.add('on');});
@@ -345,8 +471,6 @@ function resetForm(){
   document.getElementById('add-photo-btn').style.display='none';
   document.getElementById('ot-chk').checked=false;
   document.getElementById('ot-wrap').style.display='none';
-  document.getElementById('submit-btn').textContent='내용 확인하기';
-  document.getElementById('submit-btn').style.background='#1D9E75';
   document.getElementById('edit-banner').classList.remove('show');
   processedFiles=[];expCount=0;eqCount=0;
   makeTimes('t-start',5,18,'07:00');makeTimes('t-end',5,18,'16:00');
@@ -518,10 +642,7 @@ function showConfirm(){
   if(processedFiles.length===0){alert('영수증 또는 증빙 사진을 첨부해주세요.');return;}
   if(document.querySelectorAll('.warn-box.show input[type=checkbox]:not(:checked)').length>0){alert('카드 불일치 항목을 확인 후 체크해주세요.');return;}
   if(document.querySelectorAll('.no-receipt-box.show input[type=checkbox]:not(:checked)').length>0){alert('개인카드 영수증 첨부 확인 체크를 해주세요.');return;}
-
   submitPayload=buildPayload();
-
-  // 확인 화면 내용 생성
   let html=`
     <div class="confirm-row"><span class="confirm-label">날짜</span><span class="confirm-value">${submitPayload.date}</span></div>
     <div class="confirm-row"><span class="confirm-label">현장</span><span class="confirm-value">${submitPayload.projName}</span></div>
@@ -529,7 +650,6 @@ function showConfirm(){
     <div class="confirm-row"><span class="confirm-label">작업자</span><span class="confirm-value">${submitPayload.workers||'미선택'} (${submitPayload.workerCount}명)</span></div>
     <div class="confirm-row"><span class="confirm-label">작업시간</span><span class="confirm-value">${submitPayload.timeStart}~${submitPayload.timeEnd}${submitPayload.overtime?` / 잔업 ${submitPayload.overtime}`:''}</span></div>
     <div class="confirm-row"><span class="confirm-label">작성자</span><span class="confirm-value">${submitPayload.writer}</span></div>`;
-
   if(submitPayload.expenses.length>0){
     html+=`<div class="confirm-section"><div class="confirm-section-title">💳 경비 사용 내역</div>`;
     submitPayload.expenses.forEach(e=>{
@@ -538,17 +658,14 @@ function showConfirm(){
     });
     html+=`</div>`;
   }
-
   if(submitPayload.equips.length>0){
     html+=`<div class="confirm-section"><div class="confirm-section-title">🚜 장비 / 외주 내역</div>`;
     submitPayload.equips.forEach(e=>{
-      html+=`<div class="confirm-item">${e.type} ${e.company?`/ ${e.company}`:''}<br>공급가 <strong>${Number(e.supplyAmt).toLocaleString()}원</strong> / 합계 <strong>${Number(e.totalAmt).toLocaleString()}원</strong></div>`;
+      html+=`<div class="confirm-item">${e.type}${e.company?` / ${e.company}`:''}<br>공급가 <strong>${Number(e.supplyAmt).toLocaleString()}원</strong> / 합계 <strong>${Number(e.totalAmt).toLocaleString()}원</strong></div>`;
     });
     html+=`</div>`;
   }
-
   html+=`<div class="confirm-section"><div class="confirm-section-title">📷 영수증</div><div class="confirm-item">${processedFiles.length}장 첨부됨</div></div>`;
-
   document.getElementById('confirm-content').innerHTML=html;
   document.getElementById('main-form').style.display='none';
   document.getElementById('confirm-box').classList.add('show');
