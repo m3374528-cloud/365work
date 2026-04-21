@@ -424,7 +424,7 @@ async function onDateOrProjChange(){
   const proj=document.getElementById('proj-sel').value;
   if(!proj){document.getElementById('form-body').style.display='none';document.getElementById('history-box').style.display='none';return;}
   const date=getSelectedDate(),projNum=getProjNum();
-  if(projNum==="00000"){document.getElementById("history-box").style.display="none";document.getElementById("edit-banner").classList.remove("show");currentMode="new";currentSeq=1;showFormBody();return;}
+  if(projNum==="TEST-001"){document.getElementById("history-box").style.display="none";document.getElementById("edit-banner").classList.remove("show");currentMode="new";currentSeq=1;showFormBody();return;}
   showLoading('제출 이력 확인 중...');
   try {
     const res=await fetch(`${SCRIPT_URL}?action=checkSubmit&date=${encodeURIComponent(date)}&projNum=${encodeURIComponent(projNum)}`).then(r=>r.json());
@@ -450,7 +450,7 @@ async function startEdit(){
   document.getElementById('edit-banner').classList.add('show');
   showLoading('기존 데이터 불러오는 중...');
   const date=getSelectedDate(),projNum=getProjNum();
-  if(projNum==="00000"){document.getElementById("history-box").style.display="none";document.getElementById("edit-banner").classList.remove("show");currentMode="new";currentSeq=1;showFormBody();return;}
+  if(projNum==="TEST-001"){document.getElementById("history-box").style.display="none";document.getElementById("edit-banner").classList.remove("show");currentMode="new";currentSeq=1;showFormBody();return;}
   try {
     const res=await fetch(`${SCRIPT_URL}?action=getSubmitData&date=${encodeURIComponent(date)}&projNum=${encodeURIComponent(projNum)}`).then(r=>r.json());
     hideLoading();
