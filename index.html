@@ -536,15 +536,33 @@ async function loadMasterData(){
     ]);
     masterData.projects=proj.data||[];masterData.workers=workers.data||[];
     masterData.equipments=equip.data||[];masterData.cards=cards.data||[];masterData.expenseItems=items.data||[];
-    buildProjectSelect();buildWorkerChips();buildTimePickers();buildCardReceiveUI();
+    await buildProjectSelect();buildWorkerChips();buildTimePickers();buildCardReceiveUI();
   } catch(e){console.error(e);}
   hideLoading();
   document.getElementById('work-date').value=todayObj.toISOString().split('T')[0];
 }
 
-function buildProjectSelect(){
+async function buildProjectSelect(){
   const sel=document.getElementById('proj-sel');
   sel.innerHTML='<option value="">— 프로젝트 선택 —</option>';
+  try {
+    const dateStr=getTodayStr();
+    const res=await fetch(`${SCRIPT_URL}?action=getCardStatus&date=${encodeURIComponent(dateStr)}`).then(r=>r.json());
+    const outCards=res.data?res.data.filter(c=>c.status==='외출중'):[];
+    const receivedProjNums=outCards.map(c=>c.projNum).filter(Boolean);
+    if(receivedProjNums.length>0){
+      const filteredProjects=masterData.projects.filter(p=>receivedProjNums.includes(p.projNum));
+      if(filteredProjects.length>0){
+        filteredProjects.forEach(p=>{
+          const opt=document.createElement('option');
+          opt.value=`${p.biz}|${p.projNum}|${p.projName}`;
+          opt.textContent=`[${p.biz} ${p.projNum}] ${p.projName}`;
+          sel.appendChild(opt);
+        });
+        return;
+      }
+    }
+  } catch(e){}
   masterData.projects.forEach(p=>{
     const opt=document.createElement('option');
     opt.value=`${p.biz}|${p.projNum}|${p.projName}`;
