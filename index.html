@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta property="og:title" content="현장 작업일보">
-<meta property="og:description" content="현장 작업일보 입력">
+<meta property="og:description" content="현장 작업일보">
 <title>현장 작업일보</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;color:#1a1a1a;background:#f5f5f0;padding:0}
 .tab-bar{display:flex;background:#fff;border-bottom:0.5px solid #e0e0d8;position:sticky;top:0;z-index:100}
-.tab{flex:1;padding:14px;text-align:center;font-size:14px;font-weight:500;color:#888;cursor:pointer;border-bottom:2px solid transparent}
+.tab{flex:1;padding:12px 4px;text-align:center;font-size:12px;font-weight:500;color:#888;cursor:pointer;border-bottom:2px solid transparent}
 .tab.on{color:#1D9E75;border-bottom:2px solid #1D9E75}
 .page{display:none;padding:12px}
 .page.on{display:block}
@@ -25,7 +25,6 @@ input[type=checkbox]{width:16px!important;height:16px;cursor:pointer;flex-shrink
 .lbl{font-size:12px;color:#888;margin-bottom:4px;margin-top:8px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .add-btn{width:100%;padding:8px;border:0.5px dashed #ccc;border-radius:8px;background:transparent;color:#888;font-size:13px;cursor:pointer;margin-top:8px}
-.add-btn:hover{background:#f5f5f0}
 .item-box{border:0.5px solid #eee;border-radius:8px;padding:10px;margin-top:8px;position:relative}
 .del-btn{position:absolute;top:8px;right:8px;background:none;border:none;color:#bbb;cursor:pointer;font-size:18px;line-height:1;padding:0}
 .card-chip{padding:8px 10px;border-radius:8px;border:0.5px solid #ccc;font-size:12px;cursor:pointer;background:#fff;color:#1a1a1a;text-align:center}
@@ -41,7 +40,6 @@ input[type=checkbox]{width:16px!important;height:16px;cursor:pointer;flex-shrink
 .check-row{display:flex;align-items:center;gap:8px;margin:8px 0}
 .check-row label{font-size:13px;color:#555;cursor:pointer}
 .file-label{display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;border:0.5px dashed #ccc;border-radius:8px;color:#888;font-size:13px;cursor:pointer;margin-top:6px}
-.file-label:hover{background:#f5f5f0}
 .file-label.invoice{border-color:#534AB7;color:#534AB7}
 .add-photo-btn{display:none;width:100%;padding:8px;border:0.5px dashed #1D9E75;border-radius:8px;background:transparent;color:#1D9E75;font-size:13px;cursor:pointer;margin-top:6px;text-align:center}
 .add-invoice-btn{display:none;width:100%;padding:8px;border:0.5px dashed #534AB7;border-radius:8px;background:transparent;color:#534AB7;font-size:13px;cursor:pointer;margin-top:6px;text-align:center}
@@ -102,18 +100,39 @@ input[type=checkbox]{width:16px!important;height:16px;cursor:pointer;flex-shrink
 .back-btn{width:100%;padding:12px;background:#f5f5f0;color:#555;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:12px}
 .empty-state{text-align:center;padding:40px 20px;color:#888;font-size:13px}
 .disabled-section{opacity:0.4;pointer-events:none}
+/* 카드 현황 */
+.card-status-item{background:#fff;border:0.5px solid #e0e0d8;border-radius:12px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px}
+.card-status-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.card-status-dot.out{background:#F5A623}
+.card-status-dot.in{background:#1D9E75}
+.card-status-info{flex:1}
+.card-status-name{font-size:14px;font-weight:500;color:#1a1a1a}
+.card-status-sub{font-size:12px;color:#888;margin-top:2px}
+.card-status-badge{font-size:11px;font-weight:500;padding:3px 10px;border-radius:10px}
+.card-status-badge.out{background:#FEF3E2;color:#C17D20}
+.card-status-badge.in{background:#E1F5EE;color:#0F6E56}
+.card-match-ok{color:#1D9E75;font-size:11px;margin-top:2px}
+.card-match-warn{color:#E24B4A;font-size:11px;margin-top:2px}
+/* 카드 수령 */
+.receive-card-chip{padding:10px 12px;border-radius:8px;border:0.5px solid #ccc;font-size:13px;cursor:pointer;background:#fff;color:#1a1a1a;text-align:center;transition:all 0.15s}
+.receive-card-chip.on{background:#185FA5;border-color:#185FA5;color:#fff}
+.match-ok{display:none;margin-top:8px;padding:10px 12px;background:#E1F5EE;border:0.5px solid #1D9E75;border-radius:8px;font-size:12px;color:#0F6E56}
+.match-ok.show{display:block}
+.match-warn{display:none;margin-top:8px;padding:10px 12px;background:#FCEBEB;border:0.5px solid #F09595;border-radius:8px;font-size:12px;color:#A32D2D}
+.match-warn.show{display:block}
 </style>
 </head>
 <body>
-
 <div class="loading" id="loading">
   <div class="spinner"></div>
   <div class="loading-text" id="loading-text">불러오는 중...</div>
 </div>
 
 <div class="tab-bar">
-  <div class="tab on" id="tab-write" onclick="switchTab('write')">✏️ 작업일보 작성</div>
-  <div class="tab" id="tab-view" onclick="switchTab('view')">📋 작업일보 확인</div>
+  <div class="tab on" id="tab-write" onclick="switchTab('write')">✏️ 작업일보</div>
+  <div class="tab" id="tab-view" onclick="switchTab('view')">📋 확인</div>
+  <div class="tab" id="tab-card" onclick="switchTab('card')">💳 카드수령</div>
+  <div class="tab" id="tab-status" onclick="switchTab('status')">📊 카드현황</div>
 </div>
 
 <!-- 작성 탭 -->
@@ -122,13 +141,11 @@ input[type=checkbox]{width:16px!important;height:16px;cursor:pointer;flex-shrink
   <p style="font-size:16px;font-weight:500;margin-bottom:2px">현장 작업일보</p>
   <p id="today-date" style="font-size:12px;color:#888"></p>
 </div>
-
 <div class="complete-box" id="complete-box">
   <div class="complete-title" id="complete-title">✅ 최종 제출 완료!</div>
   <div class="complete-desc" id="complete-desc"></div>
   <button class="new-btn" onclick="startNewForm()">새 작업일보 작성하기</button>
 </div>
-
 <div class="confirm-box" id="confirm-box">
   <div class="confirm-title">📋 작업일보 확인</div>
   <div id="confirm-content"></div>
@@ -137,7 +154,6 @@ input[type=checkbox]{width:16px!important;height:16px;cursor:pointer;flex-shrink
     <button class="btn-final" id="final-btn" onclick="finalSubmit()">최종 제출</button>
   </div>
 </div>
-
 <div id="main-form">
 <div class="section">
   <div class="sec-title">작업 날짜 <span class="req">*</span></div>
@@ -153,7 +169,6 @@ input[type=checkbox]{width:16px!important;height:16px;cursor:pointer;flex-shrink
   </div>
 </div>
 <div class="edit-banner" id="edit-banner">✏️ 수정 모드 — 기존 내용을 수정 후 제출하세요</div>
-
 <div id="form-body" style="display:none">
 <div class="section">
   <div class="sec-title">투입 작업자</div>
@@ -161,7 +176,6 @@ input[type=checkbox]{width:16px!important;height:16px;cursor:pointer;flex-shrink
   <div class="lbl">추가 인원</div>
   <input type="text" id="extra-workers" placeholder="추가 작업자 이름 입력 (쉼표로 구분)">
 </div>
-
 <div class="section">
   <div class="sec-title">작업 시간</div>
   <div class="time-row">
@@ -182,8 +196,6 @@ input[type=checkbox]{width:16px!important;height:16px;cursor:pointer;flex-shrink
     </div>
   </div>
 </div>
-
-<!-- 경비 섹션 -->
 <div class="section">
   <div class="sec-title">경비 사용 내역</div>
   <div class="check-row">
@@ -208,8 +220,6 @@ input[type=checkbox]{width:16px!important;height:16px;cursor:pointer;flex-shrink
     </div>
   </div>
 </div>
-
-<!-- 장비 섹션 -->
 <div class="section">
   <div class="sec-title">장비 / 외주 사용 내역</div>
   <div id="equip-list"></div>
@@ -233,12 +243,10 @@ input[type=checkbox]{width:16px!important;height:16px;cursor:pointer;flex-shrink
     </div>
   </div>
 </div>
-
 <div class="section">
   <div class="sec-title">작성자 <span class="req">*</span></div>
   <input type="text" id="writer" placeholder="작성자 이름 입력">
 </div>
-
 <div style="padding-bottom:30px">
   <button class="btn-final" id="submit-btn" onclick="showConfirm()" style="width:100%;padding:14px;font-size:15px">내용 확인하기</button>
 </div>
@@ -248,9 +256,7 @@ input[type=checkbox]{width:16px!important;height:16px;cursor:pointer;flex-shrink
 
 <!-- 확인 탭 -->
 <div class="page" id="page-view">
-  <div style="padding:12px 0 4px">
-    <p style="font-size:16px;font-weight:500;margin-bottom:2px">작업일보 확인</p>
-  </div>
+  <div style="padding:12px 0 4px"><p style="font-size:16px;font-weight:500">작업일보 확인</p></div>
   <div id="view-list">
     <div class="section">
       <div class="sec-title">날짜 선택</div>
@@ -260,11 +266,49 @@ input[type=checkbox]{width:16px!important;height:16px;cursor:pointer;flex-shrink
   </div>
   <div id="view-detail" style="display:none">
     <button class="back-btn" onclick="backToList()">← 목록으로</button>
-    <div class="confirm-box show" id="detail-content">
-      <div class="confirm-title">📋 작업일보 확인</div>
-      <div id="detail-body"></div>
+    <div class="confirm-box show"><div class="confirm-title">📋 작업일보 확인</div><div id="detail-body"></div></div>
+  </div>
+</div>
+
+<!-- 카드 수령 탭 -->
+<div class="page" id="page-card">
+  <div style="padding:12px 0 4px"><p style="font-size:16px;font-weight:500">💳 카드 수령 등록</p></div>
+  <div class="complete-box" id="card-complete-box">
+    <div class="complete-title">✅ 카드 수령 등록 완료!</div>
+    <div class="complete-desc" id="card-complete-desc"></div>
+    <button class="new-btn" onclick="resetCardForm()">새로 등록하기</button>
+  </div>
+  <div id="card-form">
+    <div class="section">
+      <div class="sec-title">수령자 <span class="req">*</span></div>
+      <select id="card-receiver"><option value="">— 선택 —</option></select>
+      <div class="lbl">목록에 없으면 직접 입력</div>
+      <input type="text" id="card-receiver-custom" placeholder="이름 직접 입력">
+    </div>
+    <div class="section">
+      <div class="sec-title">카드 선택 <span class="req">*</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px" id="card-chips"></div>
+    </div>
+    <div class="section">
+      <div class="sec-title">현장 선택 <span class="req">*</span></div>
+      <select id="card-proj" onchange="checkCardMatch()"><option value="">— 현장 선택 —</option></select>
+      <div class="match-ok" id="card-match-ok">✅ 카드와 현장이 일치합니다!</div>
+      <div class="match-warn" id="card-match-warn">⚠️ 카드와 현장 사업장이 일치하지 않습니다! 올바른 카드를 선택해주세요.</div>
+    </div>
+    <div style="padding-bottom:30px">
+      <button class="btn-final" onclick="submitCardReceive()" style="width:100%;padding:14px;font-size:15px">카드 수령 등록</button>
     </div>
   </div>
+</div>
+
+<!-- 카드 현황 탭 -->
+<div class="page" id="page-status">
+  <div style="padding:12px 0 8px;display:flex;justify-content:space-between;align-items:center">
+    <p style="font-size:16px;font-weight:500">📊 카드 현황</p>
+    <button onclick="loadCardStatus()" style="padding:6px 12px;background:#1D9E75;color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer">새로고침</button>
+  </div>
+  <p id="card-status-date" style="font-size:12px;color:#888;margin-bottom:12px"></p>
+  <div id="card-status-list"></div>
 </div>
 
 <script>
@@ -274,12 +318,11 @@ let receiptFiles=[],invoiceFiles=[];
 let currentMode='new',currentSeq=1;
 let expCount=0,eqCount=0;
 let submitPayload=null;
+let selectedCardForReceive=null;
 
-// 카드 약자 변환
-function cardShort(cardCo, last4) {
-  const map = {'삼육오컴퍼니':'컴','컴퍼니':'컴','삼육오안전관리':'안','안전관리':'안','철거인':'철','개인':'개인'};
-  const short = map[cardCo] || cardCo.substring(0,2);
-  return `${short}${last4}`;
+function cardShort(cardCo,last4){
+  const map={'삼육오컴퍼니':'컴','컴퍼니':'컴','삼육오안전관리':'안','안전관리':'안','철거인':'철','개인':'개인'};
+  return`${map[cardCo]||cardCo.substring(0,2)}${last4}`;
 }
 
 const todayObj=new Date();
@@ -301,8 +344,124 @@ function switchTab(tab){
   document.getElementById('tab-'+tab).classList.add('on');
   document.getElementById('page-'+tab).classList.add('on');
   if(tab==='view'){document.getElementById('view-date').value=todayObj.toISOString().split('T')[0];loadRecords();}
+  if(tab==='status')loadCardStatus();
 }
 
+// ========== 카드 현황 ==========
+async function loadCardStatus(){
+  showLoading('카드 현황 불러오는 중...');
+  const dateStr=getTodayStr();
+  document.getElementById('card-status-date').textContent=`기준일: ${dateStr}`;
+  try {
+    const res=await fetch(`${SCRIPT_URL}?action=getCardStatus&date=${encodeURIComponent(dateStr)}`).then(r=>r.json());
+    hideLoading();
+    const list=document.getElementById('card-status-list');
+    if(!res.data||res.data.length===0){list.innerHTML=`<div class="empty-state">카드 정보가 없어요</div>`;return;}
+    list.innerHTML='';
+    res.data.forEach(c=>{
+      const isOut=c.status==='외출중';
+      const matchHtml=isOut?(c.match==='일치'?`<div class="card-match-ok">✅ 카드-현장 일치</div>`:`<div class="card-match-warn">⚠️ 카드-현장 불일치</div>`):'';
+      const div=document.createElement('div');div.className='card-status-item';
+      div.innerHTML=`
+        <div class="card-status-dot ${isOut?'out':'in'}"></div>
+        <div class="card-status-info">
+          <div class="card-status-name">${c.cardCo}(${c.last4})</div>
+          <div class="card-status-sub">${isOut?`${c.receiver} → ${c.projName}`:'사무실'}</div>
+          ${matchHtml}
+        </div>
+        <div class="card-status-badge ${isOut?'out':'in'}">${isOut?'🟡 외출중':'🟢 사무실'}</div>`;
+      list.appendChild(div);
+    });
+  } catch(e){hideLoading();document.getElementById('card-status-list').innerHTML=`<div class="empty-state">불러오지 못했어요</div>`;}
+}
+
+// ========== 카드 수령 ==========
+function buildCardReceiveUI(){
+  // 수령자 목록
+  const sel=document.getElementById('card-receiver');
+  sel.innerHTML='<option value="">— 선택 —</option>';
+  masterData.workers.forEach(w=>{
+    const opt=document.createElement('option');opt.value=w.name;opt.textContent=w.name;sel.appendChild(opt);
+  });
+  // 카드 칩
+  const wrap=document.getElementById('card-chips');wrap.innerHTML='';
+  masterData.cards.forEach(c=>{
+    const div=document.createElement('div');div.className='receive-card-chip';
+    div.textContent=`${c.cardCo}(${c.last4})`;
+    div.dataset.cardco=c.cardCo;div.dataset.last4=c.last4;div.dataset.biz=c.biz;
+    div.onclick=()=>{
+      document.querySelectorAll('.receive-card-chip').forEach(x=>x.classList.remove('on'));
+      div.classList.add('on');selectedCardForReceive=c;checkCardMatch();
+    };
+    wrap.appendChild(div);
+  });
+  // 현장 목록
+  const psel=document.getElementById('card-proj');
+  psel.innerHTML='<option value="">— 현장 선택 —</option>';
+  masterData.projects.forEach(p=>{
+    const opt=document.createElement('option');
+    opt.value=`${p.biz}|${p.projNum}|${p.projName}`;
+    opt.textContent=`[${p.biz} ${p.projNum}] ${p.projName}`;
+    psel.appendChild(opt);
+  });
+}
+
+function checkCardMatch(){
+  const proj=document.getElementById('card-proj').value;
+  if(!proj||!selectedCardForReceive){
+    document.getElementById('card-match-ok').classList.remove('show');
+    document.getElementById('card-match-warn').classList.remove('show');
+    return;
+  }
+  const projBiz=proj.split('|')[0];
+  const isMatch=selectedCardForReceive.biz===projBiz;
+  document.getElementById('card-match-ok').classList.toggle('show',isMatch);
+  document.getElementById('card-match-warn').classList.toggle('show',!isMatch);
+}
+
+async function submitCardReceive(){
+  const receiverSel=document.getElementById('card-receiver').value;
+  const receiverCustom=document.getElementById('card-receiver-custom').value.trim();
+  const receiver=receiverCustom||receiverSel;
+  const proj=document.getElementById('card-proj').value;
+  if(!receiver){alert('수령자를 선택하거나 입력해주세요.');return;}
+  if(!selectedCardForReceive){alert('카드를 선택해주세요.');return;}
+  if(!proj){alert('현장을 선택해주세요.');return;}
+  const projParts=proj.split('|');
+  const projBiz=projParts[0],projNum=projParts[1],projName=projParts[2];
+  const isMatch=selectedCardForReceive.biz===projBiz;
+  const payload={
+    type:'cardReceive',
+    date:getTodayStr(),
+    receiver,
+    cardCo:selectedCardForReceive.cardCo,
+    last4:selectedCardForReceive.last4,
+    projName,projNum,projBiz,
+    match:isMatch?'일치':'불일치'
+  };
+  showLoading('등록 중...');
+  try {
+    await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payload)});
+    hideLoading();
+    document.getElementById('card-form').style.display='none';
+    document.getElementById('card-complete-box').classList.add('show');
+    document.getElementById('card-complete-desc').textContent=`${receiver} → ${selectedCardForReceive.cardCo}(${selectedCardForReceive.last4}) → ${projName}`;
+  } catch(e){hideLoading();alert('등록 중 오류가 발생했습니다.');}
+}
+
+function resetCardForm(){
+  document.getElementById('card-complete-box').classList.remove('show');
+  document.getElementById('card-form').style.display='block';
+  document.getElementById('card-receiver').value='';
+  document.getElementById('card-receiver-custom').value='';
+  document.querySelectorAll('.receive-card-chip').forEach(x=>x.classList.remove('on'));
+  document.getElementById('card-proj').value='';
+  document.getElementById('card-match-ok').classList.remove('show');
+  document.getElementById('card-match-warn').classList.remove('show');
+  selectedCardForReceive=null;
+}
+
+// ========== 확인 탭 ==========
 async function loadRecords(){
   const v=document.getElementById('view-date').value;if(!v)return;
   const d=new Date(v+'T00:00:00');
@@ -318,11 +477,11 @@ async function loadRecords(){
       const card=document.createElement('div');card.className='record-card';
       card.innerHTML=`<div class="record-card-title">✅ ${r.projName}</div>
         <div class="record-card-sub">${r.projNum} | 작업자 ${r.workerCount}명 | ${r.timeRange}</div>
-        <div class="record-card-sub" style="margin-top:2px">총경비 ${Number(r.totalAmt).toLocaleString()}원 | ${r.writer} | ${r.submitTime}</div>`;
+        <div class="record-card-sub" style="margin-top:2px">총경비 ${Number(r.totalAmt).toLocaleString()}원 | ${r.writer}</div>`;
       card.onclick=()=>showDetail(r.projNum,dateStr);
       list.appendChild(card);
     });
-  } catch(e){hideLoading();document.getElementById('record-list').innerHTML=`<div class="empty-state">데이터를 불러오지 못했어요</div>`;}
+  } catch(e){hideLoading();}
 }
 
 async function showDetail(projNum,dateStr){
@@ -348,23 +507,23 @@ async function showDetail(projNum,dateStr){
       res.expenses.forEach(e=>{
         const badge=e.isPersonal?`<span class="badge badge-personal">개인(${e.userName})</span>`:`<span class="badge badge-corp">${e.cardCo}(${e.last4})</span>`;
         html+=`<div class="confirm-item">${e.item} ${badge}<br><strong>${Number(e.amount).toLocaleString()}원</strong></div>`;
-      });
-      html+=`</div>`;
+      });html+=`</div>`;
     }
     if(res.equips&&res.equips.length>0){
       html+=`<div class="confirm-section"><div class="confirm-section-title">🚜 장비 / 외주 내역</div>`;
-      res.equips.forEach(e=>{html+=`<div class="confirm-item">${e.type}${e.company?` / ${e.company}`:''}<br>공급가 <strong>${Number(e.supplyAmt).toLocaleString()}원</strong> / 합계 <strong>${Number(e.totalAmt).toLocaleString()}원</strong></div>`;});
+      res.equips.forEach(e=>{html+=`<div class="confirm-item">${e.type}${e.company?` / ${e.company}`:''}<br>공급가 <strong>${Number(e.supplyAmt).toLocaleString()}원</strong></div>`;});
       html+=`</div>`;
     }
     document.getElementById('detail-body').innerHTML=html;
     document.getElementById('view-list').style.display='none';
     document.getElementById('view-detail').style.display='block';
     window.scrollTo(0,0);
-  } catch(e){hideLoading();alert('상세 내용을 불러오지 못했어요');}
+  } catch(e){hideLoading();}
 }
 
 function backToList(){document.getElementById('view-detail').style.display='none';document.getElementById('view-list').style.display='block';window.scrollTo(0,0);}
 
+// ========== 마스터 데이터 ==========
 async function loadMasterData(){
   showLoading('데이터 불러오는 중...');
   try {
@@ -377,7 +536,7 @@ async function loadMasterData(){
     ]);
     masterData.projects=proj.data||[];masterData.workers=workers.data||[];
     masterData.equipments=equip.data||[];masterData.cards=cards.data||[];masterData.expenseItems=items.data||[];
-    buildProjectSelect();buildWorkerChips();buildTimePickers();
+    buildProjectSelect();buildWorkerChips();buildTimePickers();buildCardReceiveUI();
   } catch(e){console.error(e);}
   hideLoading();
   document.getElementById('work-date').value=todayObj.toISOString().split('T')[0];
@@ -418,16 +577,12 @@ function makeTimes(selId,from,to,defVal){
 }
 
 function toggleOT(cb){document.getElementById('ot-wrap').style.display=cb.checked?'block':'none';}
-
 function toggleNoExpense(cb){
-  const body=document.getElementById('expense-body');
-  body.classList.toggle('disabled-section',cb.checked);
+  document.getElementById('expense-body').classList.toggle('disabled-section',cb.checked);
   if(cb.checked){receiptFiles=[];document.getElementById('receipt-preview').innerHTML='';document.getElementById('add-photo-btn').style.display='none';}
 }
-
 function toggleNoInvoice(cb){
-  const body=document.getElementById('invoice-body');
-  body.classList.toggle('disabled-section',cb.checked);
+  document.getElementById('invoice-body').classList.toggle('disabled-section',cb.checked);
   if(cb.checked){invoiceFiles=[];document.getElementById('invoice-preview').innerHTML='';document.getElementById('add-invoice-btn').style.display='none';}
 }
 
@@ -441,7 +596,7 @@ async function onDateOrProjChange(){
   try {
     const res=await fetch(`${SCRIPT_URL}?action=checkSubmit&date=${encodeURIComponent(date)}&projNum=${encodeURIComponent(projNum)}`).then(r=>r.json());
     hideLoading();
-    if(res.data&&res.data.length>0){showHistory(res.data);}
+    if(res.data&&res.data.length>0)showHistory(res.data);
     else{document.getElementById('history-box').style.display='none';document.getElementById('edit-banner').classList.remove('show');currentMode='new';currentSeq=1;showFormBody();}
   } catch(e){hideLoading();showFormBody();}
 }
@@ -504,13 +659,6 @@ function startNewForm(){
   currentMode='new';currentSeq=1;resetForm();window.scrollTo(0,0);
 }
 
-// 현재 선택된 카드 가져오기
-function getSelectedCard(){
-  const cardEl=document.querySelector('.card-chip.on');
-  if(!cardEl)return null;
-  return{cardCo:cardEl.dataset.cardco,last4:cardEl.dataset.last4,biz:cardEl.dataset.biz,isPersonal:cardEl.dataset.personal==='true'};
-}
-
 function addExpense(){
   expCount++;const id=expCount;
   const div=document.createElement('div');div.className='item-box';div.id='exp-'+id;
@@ -524,7 +672,7 @@ function addExpense(){
       <div class="card-chip personal" data-biz="개인" data-cardco="개인" data-last4="-" data-personal="true" onclick="selCard(this,'${id}')">개인카드</div>
     </div>
     <div class="warn-box" id="warn-${id}">
-      해당 현장과 사용 카드가 일치하지 않습니다. 사업장에 맞는 카드를 사용해주세요!
+      해당 현장과 사용 카드가 일치하지 않습니다!
       <div class="warn-check"><input type="checkbox" id="warn-ck-${id}"><label for="warn-ck-${id}">확인했습니다 (부득이한 사유로 타 법인 카드 사용)</label></div>
     </div>
     <div class="personal-name-wrap" id="pname-wrap-${id}">
@@ -532,7 +680,7 @@ function addExpense(){
       <input type="text" id="pname-${id}" placeholder="개인카드 사용자 이름 입력">
     </div>
     <div class="no-receipt-box" id="no-receipt-${id}">
-      개인카드 사용 후 영수증 미첨부시 경비지급이 불가하오니 반드시 첨부해주세요!
+      개인카드 사용 후 영수증 미첨부시 경비지급 불가!
       <div class="warn-check"><input type="checkbox" id="no-receipt-ck-${id}"><label for="no-receipt-ck-${id}">확인했습니다.</label></div>
     </div>
     <div class="row2" style="margin-top:8px">
@@ -570,7 +718,7 @@ function addEquip(){
     <div class="vat-box" id="vat-box-${id}">
       <div class="vat-row"><span>공급가액</span><span id="vat-supply-${id}">0원</span></div>
       <div class="vat-row"><span>부가세 (10%)</span><span id="vat-tax-${id}">0원</span></div>
-      <div class="vat-row vat-total"><span style="font-weight:500">합계 (부가세 포함)</span><span id="vat-total-${id}" style="font-weight:500">0원</span></div>
+      <div class="vat-row vat-total"><span style="font-weight:500">합계</span><span id="vat-total-${id}" style="font-weight:500">0원</span></div>
     </div>`;
   document.getElementById('equip-list').appendChild(div);
 }
@@ -584,21 +732,16 @@ function calcVat(id){
 }
 
 function getWatermarkText(type){
-  const date=getSelectedDate();
-  const projNum=getProjNum()||'';
+  const date=getSelectedDate();const projNum=getProjNum()||'';
   if(type==='receipt'){
-    // 카드 정보 포함
     const cardEl=document.querySelector('.card-chip.on');
-    if(cardEl){
-      const short=cardShort(cardEl.dataset.cardco,cardEl.dataset.last4);
-      return`${date} / ${projNum} / ${short}`;
-    }
+    if(cardEl)return`${date} / ${projNum} / ${cardShort(cardEl.dataset.cardco,cardEl.dataset.last4)}`;
     return`${date} / ${projNum}`;
   }
   return`${date} / ${projNum}`;
 }
 
-function addWatermark(file, type){
+function addWatermark(file,type){
   return new Promise(resolve=>{
     const reader=new FileReader();
     reader.onload=e=>{
@@ -615,16 +758,14 @@ function addWatermark(file, type){
         ctx.fillStyle='rgba(0,0,0,0.45)';ctx.beginPath();ctx.roundRect(boxX,boxY,textW+boxPad*2,textH+boxPad*2,6);ctx.fill();
         ctx.fillStyle='rgba(255,255,255,0.92)';ctx.textBaseline='top';ctx.fillText(watermark,(img.width-textW)/2,boxY+boxPad);
         canvas.toBlob(blob=>{const r2=new FileReader();r2.onload=e2=>resolve({dataUrl:e2.target.result,canvas,name:file.name});r2.readAsDataURL(blob);},'image/jpeg',0.85);
-      };
-      img.src=e.target.result;
-    };
-    reader.readAsDataURL(file);
+      };img.src=e.target.result;
+    };reader.readAsDataURL(file);
   });
 }
 
-async function previewFiles(input, type, isAdd){
-  const previewId = type==='receipt' ? 'receipt-preview' : 'invoice-preview';
-  const addBtnId = type==='receipt' ? 'add-photo-btn' : 'add-invoice-btn';
+async function previewFiles(input,type,isAdd){
+  const previewId=type==='receipt'?'receipt-preview':'invoice-preview';
+  const addBtnId=type==='receipt'?'add-photo-btn':'add-invoice-btn';
   const wrap=document.getElementById(previewId);
   if(!isAdd){wrap.innerHTML='';if(type==='receipt')receiptFiles=[];else invoiceFiles=[];}
   const files=Array.from(input.files);
@@ -683,13 +824,11 @@ function showConfirm(){
   const proj=document.getElementById('proj-sel').value;
   const writer=document.getElementById('writer').value.trim();
   const noExpense=document.getElementById('no-expense-chk').checked;
-  const noInvoice=document.getElementById('no-invoice-chk').checked;
   if(!proj){alert('프로젝트를 선택해주세요.');return;}
   if(!writer){alert('작성자를 입력해주세요.');return;}
   if(!noExpense&&receiptFiles.length===0){alert('영수증을 첨부하거나 "경비 사용 없음"을 체크해주세요.');return;}
   if(document.querySelectorAll('.warn-box.show input[type=checkbox]:not(:checked)').length>0){alert('카드 불일치 항목을 확인 후 체크해주세요.');return;}
   if(document.querySelectorAll('.no-receipt-box.show input[type=checkbox]:not(:checked)').length>0){alert('개인카드 영수증 첨부 확인 체크를 해주세요.');return;}
-
   submitPayload=buildPayload();
   let html=`
     <div class="confirm-row"><span class="confirm-label">날짜</span><span class="confirm-value">${submitPayload.date}</span></div>
@@ -698,7 +837,6 @@ function showConfirm(){
     <div class="confirm-row"><span class="confirm-label">작업자</span><span class="confirm-value">${submitPayload.workers||'미선택'} (${submitPayload.workerCount}명)</span></div>
     <div class="confirm-row"><span class="confirm-label">작업시간</span><span class="confirm-value">${submitPayload.timeStart}~${submitPayload.timeEnd}${submitPayload.overtime?` / 잔업 ${submitPayload.overtime}`:''}</span></div>
     <div class="confirm-row"><span class="confirm-label">작성자</span><span class="confirm-value">${submitPayload.writer}</span></div>`;
-
   if(submitPayload.noExpense){
     html+=`<div class="confirm-row"><span class="confirm-label">경비</span><span class="confirm-value" style="color:#888">경비 사용 없음</span></div>`;
   } else if(submitPayload.expenses.length>0){
@@ -706,18 +844,15 @@ function showConfirm(){
     submitPayload.expenses.forEach(e=>{
       const badge=e.isPersonal?`<span class="badge badge-personal">개인(${e.userName})</span>`:`<span class="badge badge-corp">${e.cardCo}(${e.last4})</span>`;
       html+=`<div class="confirm-item">${e.item} ${badge}<br><strong>${Number(e.amount).toLocaleString()}원</strong></div>`;
-    });
-    html+=`</div>`;
+    });html+=`</div>`;
     html+=`<div class="confirm-row"><span class="confirm-label">영수증</span><span class="confirm-value">${receiptFiles.length}장 첨부</span></div>`;
   }
-
   if(submitPayload.equips.length>0){
     html+=`<div class="confirm-section"><div class="confirm-section-title">🚜 장비 / 외주 내역</div>`;
-    submitPayload.equips.forEach(e=>{html+=`<div class="confirm-item">${e.type}${e.company?` / ${e.company}`:''}<br>공급가 <strong>${Number(e.supplyAmt).toLocaleString()}원</strong> / 합계 <strong>${Number(e.totalAmt).toLocaleString()}원</strong></div>`;});
+    submitPayload.equips.forEach(e=>{html+=`<div class="confirm-item">${e.type}${e.company?` / ${e.company}`:''}<br>공급가 <strong>${Number(e.supplyAmt).toLocaleString()}원</strong></div>`;});
     html+=`</div>`;
-    html+=`<div class="confirm-row"><span class="confirm-label">명세서</span><span class="confirm-value">${noInvoice?'명세서 없음':invoiceFiles.length+'장 첨부'}</span></div>`;
+    html+=`<div class="confirm-row"><span class="confirm-label">명세서</span><span class="confirm-value">${submitPayload.noInvoice?'명세서 없음':invoiceFiles.length+'장 첨부'}</span></div>`;
   }
-
   document.getElementById('confirm-content').innerHTML=html;
   document.getElementById('main-form').style.display='none';
   document.getElementById('confirm-box').classList.add('show');
@@ -736,23 +871,18 @@ async function finalSubmit(){
   showLoading('데이터 저장 중...');
   try {
     await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(submitPayload)});
-
-    // 영수증 업로드
     for(let i=0;i<receiptFiles.length;i++){
       showLoading(`영수증 업로드 중... (${i+1}/${receiptFiles.length})`);
       await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({type:'image',date:submitPayload.date,projNum:submitPayload.projNum,imageData:receiptFiles[i].dataUrl,fileName:`영수증_${submitPayload.date}_${submitPayload.projNum}_${i+1}.jpg`})});
     }
-
-    // 거래명세서 업로드
     for(let i=0;i<invoiceFiles.length;i++){
       showLoading(`거래명세서 업로드 중... (${i+1}/${invoiceFiles.length})`);
       await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({type:'invoice',date:submitPayload.date,projNum:submitPayload.projNum,imageData:invoiceFiles[i].dataUrl,fileName:`명세서_${submitPayload.date}_${submitPayload.projNum}_${i+1}.jpg`})});
     }
-
     hideLoading();
     document.getElementById('final-btn').disabled=false;
     document.getElementById('confirm-box').classList.remove('show');
-    const box=document.getElementById('complete-box');box.classList.add('show');
+    document.getElementById('complete-box').classList.add('show');
     document.getElementById('complete-title').textContent=currentMode==='edit'?'✅ 수정 완료!':'✅ 최종 제출 완료!';
     document.getElementById('complete-desc').textContent=`${submitPayload.projName} | ${submitPayload.writer}`;
     window.scrollTo(0,0);
