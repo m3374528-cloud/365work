@@ -1017,7 +1017,7 @@ function buildPayload(){
   return{type:'expense',date:dateStr,projNum,projName,projBiz,workers,workerCount:selectedWorkers.length,timeStart,timeEnd,overtime,expenses,equips,noExpense,noInvoice,receiptCount:receiptFiles.length,invoiceCount:invoiceFiles.length,writer,submitTime,seq:currentSeq,isRevision:currentMode==='edit'};
 }
 
-function showConfirm(){
+async function showConfirm(){
   const proj=document.getElementById('proj-sel').value;
   const writer=document.getElementById('writer').value.trim();
   const noExpense=document.getElementById('no-expense-chk').checked;
