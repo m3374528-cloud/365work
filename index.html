@@ -166,7 +166,7 @@ input[type=checkbox]{width:16px!important;height:16px;cursor:pointer;flex-shrink
 <div id="main-form">
 <div class="section">
   <div class="sec-title">작업 날짜 <span class="req">*</span></div>
-  <input type="date" id="work-date" onchange="onDateOrProjChange()">
+  <input type="date" id="work-date" onchange="refreshProjectList()">
 </div>
 <div class="section">
   <div class="sec-title">프로젝트 번호 <span class="req">*</span></div>
@@ -393,6 +393,7 @@ function switchTab(tab){
   if(tab==='status'){loadCardStatus();loadAllCardHistory();}
   if(tab==='card'){loadCardHistory();}
   if(tab==='write'||tab==='card')loadUnsubmittedBanner();
+  if(tab==='write'){document.getElementById('no-card-warn').style.display='none';buildProjectSelect();}
 }
 
 // ========== 미제출 배너 ==========
@@ -688,11 +689,18 @@ async function loadMasterData(){
     ]);
     masterData.projects=proj.data||[];masterData.workers=workers.data||[];
     masterData.equipments=equip.data||[];masterData.cards=cards.data||[];masterData.expenseItems=items.data||[];
-    await buildProjectSelect();buildWorkerChips();buildTimePickers();buildExpenseCardChips();buildCardReceiveUI();
+    buildWorkerChips();buildTimePickers();buildExpenseCardChips();buildCardReceiveUI();
   } catch(e){console.error(e);}
   hideLoading();
   document.getElementById('work-date').value=todayObj.toISOString().split('T')[0];
   loadUnsubmittedBanner();
+}
+
+async function refreshProjectList(){
+  document.getElementById('no-card-warn').style.display='none';
+  document.getElementById('proj-sel').innerHTML='<option value="">— 프로젝트 선택 —</option>';
+  await buildProjectSelect();
+  onDateOrProjChange();
 }
 
 async function buildProjectSelect(targetDate){
@@ -766,9 +774,6 @@ function toggleNoInvoice(cb){
 }
 
 async function onDateOrProjChange(){
-  // 날짜 변경 시 현장 목록 갱신
-  document.getElementById('no-card-warn').style.display='none';
-  await buildProjectSelect();
   const proj=document.getElementById('proj-sel').value;
   if(!proj){document.getElementById('form-body').style.display='none';document.getElementById('history-box').style.display='none';return;}
   const projNum=getProjNum();
