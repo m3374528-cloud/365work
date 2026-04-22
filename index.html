@@ -1034,10 +1034,7 @@ function showConfirm(){
       const statusRes=await fetch(`${SCRIPT_URL}?action=getCardStatus&date=${encodeURIComponent(dateStr)}`).then(r=>r.json());
       const myCard=statusRes.data?statusRes.data.find(c=>c.status==='외출중'&&c.projNum===getProjNum()):null;
       if(myCard&&(myCard.cardCo!==expCard.cardCo||myCard.last4!==expCard.last4)){
-        const ok=confirm(`⚠️ 수령 카드(${myCard.cardCo}(${myCard.last4}))와
-사용 카드(${expCard.cardCo}(${expCard.last4}))가 다릅니다!
-
-계속 제출하시겠어요?`);
+        const ok=confirm('수령 카드('+myCard.cardCo+'('+myCard.last4+'))와 사용 카드('+expCard.cardCo+'('+expCard.last4+'))가 다릅니다! 계속 제출하시겠어요?');
         if(!ok)return;
       }
     }catch(e){}
