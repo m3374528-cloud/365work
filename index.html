@@ -394,6 +394,7 @@ function switchTab(tab){
   if(tab==='card'){loadCardHistory();}
   if(tab==='write'||tab==='card')loadUnsubmittedBanner();
   if(tab==='write'){document.getElementById('no-card-warn').style.display='none';buildProjectSelect();}
+  if(tab==='card'){buildCardReceiveUI();}
 }
 
 // ========== 미제출 배너 ==========
@@ -478,7 +479,7 @@ async function loadAllCardHistory(){
 }
 
 async function cancelCard(date, cardCo, last4){
-  if(!confirm(`${cardCo}(${last4}) 수령을 취소하시겠어요?`))return;
+  if(!confirm(cardCo+'('+last4+') 수령을 취소하시겠어요?'))return;
   showLoading('취소 중...');
   try {
     await fetch(`${SCRIPT_URL}?action=cancelCardReceive&date=${encodeURIComponent(date)}&cardCo=${encodeURIComponent(cardCo)}&last4=${encodeURIComponent(last4)}`).then(r=>r.json());
@@ -590,9 +591,7 @@ async function submitCardReceive(){
   try {
     const res=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payload)}).then(r=>r.json());
     hideLoading();
-    if(res.result==='duplicate'){alert('⚠️ '+res.message+'
-
-같은 날짜에 이미 등록된 카드입니다.');return;}
+    if(res.result==='duplicate'){alert('이미 등록된 카드입니다: '+res.message);return;}
     document.getElementById('card-form').style.display='none';
     document.getElementById('card-complete-box').classList.add('show');
     document.getElementById('card-complete-desc').textContent=`${receiver} → ${selectedCardForReceive.cardCo}(${selectedCardForReceive.last4}) → ${projName}`;
