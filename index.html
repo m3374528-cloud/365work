@@ -100,6 +100,14 @@ input[type=checkbox]{width:16px!important;height:16px;cursor:pointer;flex-shrink
 .back-btn{width:100%;padding:12px;background:#f5f5f0;color:#555;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:12px}
 .empty-state{text-align:center;padding:40px 20px;color:#888;font-size:13px}
 .disabled-section{opacity:0.4;pointer-events:none}
+.unsub-banner{background:#FEF3E2;border:0.5px solid #FAC775;border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.unsub-banner-title{font-size:13px;font-weight:500;color:#C17D20;margin-bottom:4px}
+.unsub-banner-item{font-size:12px;color:#633806;padding:4px 0;border-bottom:0.5px solid #FAEEDA;display:flex;justify-content:space-between;align-items:center}
+.unsub-banner-item:last-child{border-bottom:none}
+.unsub-write-btn{font-size:11px;padding:4px 10px;background:#C17D20;color:#fff;border:none;border-radius:6px;cursor:pointer}
+.history-row{padding:8px 0;border-bottom:0.5px solid #eee;font-size:12px;display:flex;justify-content:space-between;align-items:center}
+.history-row:last-child{border-bottom:none}
+.cancel-btn{font-size:11px;padding:3px 8px;background:#FCEBEB;color:#A32D2D;border:none;border-radius:6px;cursor:pointer}
 /* 카드 현황 */
 .card-status-item{background:#fff;border:0.5px solid #e0e0d8;border-radius:12px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px}
 .card-status-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
@@ -141,6 +149,7 @@ input[type=checkbox]{width:16px!important;height:16px;cursor:pointer;flex-shrink
   <p style="font-size:16px;font-weight:500;margin-bottom:2px">현장 작업일보</p>
   <p id="today-date" style="font-size:12px;color:#888"></p>
 </div>
+<div id="unsub-banner-write"></div>
 <div class="complete-box" id="complete-box">
   <div class="complete-title" id="complete-title">✅ 최종 제출 완료!</div>
   <div class="complete-desc" id="complete-desc"></div>
@@ -161,6 +170,10 @@ input[type=checkbox]{width:16px!important;height:16px;cursor:pointer;flex-shrink
 </div>
 <div class="section">
   <div class="sec-title">프로젝트 번호 <span class="req">*</span></div>
+  <div id="no-card-warn" style="display:none;margin-bottom:8px;padding:10px 12px;background:#FCEBEB;border:0.5px solid #F09595;border-radius:8px;font-size:12px;color:#A32D2D">
+    ⚠️ 오늘 카드 수령 등록이 없습니다. 카드수령 탭에서 먼저 등록해주세요!
+    <div style="margin-top:6px"><button onclick="switchTab('card')" style="font-size:12px;padding:4px 10px;background:#A32D2D;color:#fff;border:none;border-radius:6px;cursor:pointer">카드수령 등록하러 가기</button></div>
+  </div>
   <select id="proj-sel" onchange="onDateOrProjChange()"><option value="">— 프로젝트 선택 —</option></select>
   <div class="history-box" id="history-box" style="display:none">
     <p style="font-weight:500;margin-bottom:6px;color:#555">이미 제출된 작업일보가 있어요</p>
@@ -290,12 +303,17 @@ input[type=checkbox]{width:16px!important;height:16px;cursor:pointer;flex-shrink
 <!-- 카드 수령 탭 -->
 <div class="page" id="page-card">
   <div style="padding:12px 0 4px"><p style="font-size:16px;font-weight:500">💳 카드 수령 등록</p></div>
+  <div id="unsub-banner-card"></div>
   <div class="complete-box" id="card-complete-box">
     <div class="complete-title">✅ 카드 수령 등록 완료!</div>
     <div class="complete-desc" id="card-complete-desc"></div>
     <button class="new-btn" onclick="resetCardForm()">새로 등록하기</button>
   </div>
   <div id="card-form">
+    <div class="section">
+      <div class="sec-title">수령 날짜 <span class="req">*</span></div>
+      <input type="date" id="card-date">
+    </div>
     <div class="section">
       <div class="sec-title">수령자 <span class="req">*</span></div>
       <select id="card-receiver"><option value="">— 선택 —</option></select>
@@ -312,9 +330,16 @@ input[type=checkbox]{width:16px!important;height:16px;cursor:pointer;flex-shrink
       <div class="match-ok" id="card-match-ok">✅ 카드와 현장이 일치합니다!</div>
       <div class="match-warn" id="card-match-warn">⚠️ 카드와 현장 사업장이 일치하지 않습니다! 올바른 카드를 선택해주세요.</div>
     </div>
-    <div style="padding-bottom:30px">
+    <div style="padding-bottom:12px">
       <button class="btn-final" onclick="submitCardReceive()" style="width:100%;padding:14px;font-size:15px">카드 수령 등록</button>
     </div>
+  </div>
+  <div class="section">
+    <div class="sec-title" style="display:flex;justify-content:space-between">
+      📋 수령 이력
+      <button onclick="loadCardHistory()" style="font-size:11px;padding:3px 8px;background:#f5f5f0;border:none;border-radius:6px;cursor:pointer">새로고침</button>
+    </div>
+    <div id="card-history-list"><p style="font-size:12px;color:#888;text-align:center;padding:12px">불러오는 중...</p></div>
   </div>
 </div>
 
@@ -326,6 +351,10 @@ input[type=checkbox]{width:16px!important;height:16px;cursor:pointer;flex-shrink
   </div>
   <p id="card-status-date" style="font-size:12px;color:#888;margin-bottom:12px"></p>
   <div id="card-status-list"></div>
+  <div class="section" style="margin-top:12px">
+    <div class="sec-title">📅 날짜별 수령 이력</div>
+    <div id="card-all-history"><p style="font-size:12px;color:#888;text-align:center;padding:12px">불러오는 중...</p></div>
+  </div>
 </div>
 
 <script>
@@ -361,14 +390,108 @@ function switchTab(tab){
   document.getElementById('tab-'+tab).classList.add('on');
   document.getElementById('page-'+tab).classList.add('on');
   if(tab==='view'){document.getElementById('view-date').value=todayObj.toISOString().split('T')[0];loadRecords();}
-  if(tab==='status')loadCardStatus();
+  if(tab==='status'){loadCardStatus();loadAllCardHistory();}
+  if(tab==='card'){loadCardHistory();}
+  if(tab==='write'||tab==='card')loadUnsubmittedBanner();
+}
+
+// ========== 미제출 배너 ==========
+async function loadUnsubmittedBanner(){
+  try {
+    const res=await fetch(`${SCRIPT_URL}?action=checkUnsubmitted`).then(r=>r.json());
+    const items=res.data||[];
+    const html=items.length===0?'':
+      `<div class="unsub-banner">
+        <div class="unsub-banner-title">⚠️ 작업일보 미제출 현장이 있습니다!</div>
+        ${items.map(i=>`<div class="unsub-banner-item">
+          <span>${i.date} ${i.projName} (${i.diffDays}일 경과)</span>
+          <button class="unsub-write-btn" onclick="goToWrite('${i.date}','${i.projNum}')">지금 작성</button>
+        </div>`).join('')}
+      </div>`;
+    document.getElementById('unsub-banner-write').innerHTML=html;
+    document.getElementById('unsub-banner-card').innerHTML=html;
+  } catch(e){}
+}
+
+function goToWrite(date, projNum){
+  switchTab('write');
+  // 날짜 설정
+  const parts=date.split('.');
+  if(parts.length===3){
+    const d=`${parts[0]}-${parts[1].padStart(2,'0')}-${parts[2].padStart(2,'0')}`;
+    document.getElementById('work-date').value=d;
+  }
+  // 프로젝트 선택
+  setTimeout(async()=>{
+    await buildProjectSelect(date);
+    const sel=document.getElementById('proj-sel');
+    for(let i=0;i<sel.options.length;i++){
+      if(sel.options[i].value.includes(projNum)){sel.selectedIndex=i;break;}
+    }
+    onDateOrProjChange();
+  },300);
+  window.scrollTo(0,0);
+}
+
+// ========== 카드 수령 이력 ==========
+async function loadCardHistory(){
+  try {
+    const res=await fetch(`${SCRIPT_URL}?action=getCardHistory`).then(r=>r.json());
+    const list=document.getElementById('card-history-list');
+    if(!res.data||res.data.length===0){list.innerHTML='<p style="font-size:12px;color:#888;text-align:center;padding:12px">수령 이력이 없어요</p>';return;}
+    // 날짜별 그룹핑
+    const grouped={};
+    res.data.forEach(r=>{if(!grouped[r.date])grouped[r.date]=[];grouped[r.date].push(r);});
+    let html='';
+    Object.keys(grouped).sort().reverse().forEach(date=>{
+      html+=`<p style="font-size:11px;font-weight:500;color:#888;margin:8px 0 4px">${date}</p>`;
+      grouped[date].forEach(r=>{
+        const matchIcon=r.match==='일치'?'✅':'⚠️';
+        html+=`<div class="history-row">
+          <span>${r.receiver} / ${r.cardCo}(${r.last4}) / ${r.projName} ${matchIcon}</span>
+          <button class="cancel-btn" onclick="cancelCard('${r.date}','${r.cardCo}','${r.last4}')">취소</button>
+        </div>`;
+      });
+    });
+    list.innerHTML=html;
+  } catch(e){document.getElementById('card-history-list').innerHTML='<p style="font-size:12px;color:#888;text-align:center;padding:12px">불러오지 못했어요</p>';}
+}
+
+async function loadAllCardHistory(){
+  try {
+    const res=await fetch(`${SCRIPT_URL}?action=getCardHistory`).then(r=>r.json());
+    const list=document.getElementById('card-all-history');
+    if(!res.data||res.data.length===0){list.innerHTML='<p style="font-size:12px;color:#888;text-align:center;padding:12px">수령 이력이 없어요</p>';return;}
+    const grouped={};
+    res.data.forEach(r=>{if(!grouped[r.date])grouped[r.date]=[];grouped[r.date].push(r);});
+    let html='';
+    Object.keys(grouped).sort().reverse().forEach(date=>{
+      html+=`<p style="font-size:11px;font-weight:500;color:#1D9E75;margin:10px 0 4px">${date}</p>`;
+      grouped[date].forEach(r=>{
+        const matchIcon=r.match==='일치'?'✅':'⚠️';
+        html+=`<div class="history-row"><span>${r.receiver} → ${r.cardCo}(${r.last4}) → ${r.projName} ${matchIcon}</span></div>`;
+      });
+    });
+    list.innerHTML=html;
+  } catch(e){}
+}
+
+async function cancelCard(date, cardCo, last4){
+  if(!confirm(`${cardCo}(${last4}) 수령을 취소하시겠어요?`))return;
+  showLoading('취소 중...');
+  try {
+    await fetch(`${SCRIPT_URL}?action=cancelCardReceive&date=${encodeURIComponent(date)}&cardCo=${encodeURIComponent(cardCo)}&last4=${encodeURIComponent(last4)}`).then(r=>r.json());
+    hideLoading();
+    await loadCardHistory();
+    await loadUnsubmittedBanner();
+  } catch(e){hideLoading();alert('취소 중 오류가 발생했습니다.');}
 }
 
 // ========== 카드 현황 ==========
 async function loadCardStatus(){
   showLoading('카드 현황 불러오는 중...');
   const dateStr=getTodayStr();
-  document.getElementById('card-status-date').textContent=`기준일: ${dateStr}`;
+  document.getElementById('card-status-date').textContent=`기준일: ${dateStr} (오늘 현황)`;
   try {
     const res=await fetch(`${SCRIPT_URL}?action=getCardStatus&date=${encodeURIComponent(dateStr)}`).then(r=>r.json());
     hideLoading();
@@ -394,6 +517,8 @@ async function loadCardStatus(){
 
 // ========== 카드 수령 ==========
 function buildCardReceiveUI(){
+  // 날짜 초기화
+  document.getElementById('card-date').value=todayObj.toISOString().split('T')[0];
   // 수령자 목록
   const sel=document.getElementById('card-receiver');
   sel.innerHTML='<option value="">— 선택 —</option>';
@@ -441,15 +566,19 @@ async function submitCardReceive(){
   const receiverCustom=document.getElementById('card-receiver-custom').value.trim();
   const receiver=receiverCustom||receiverSel;
   const proj=document.getElementById('card-proj').value;
+  const cardDateVal=document.getElementById('card-date').value;
+  if(!cardDateVal){alert('수령 날짜를 선택해주세요.');return;}
   if(!receiver){alert('수령자를 선택하거나 입력해주세요.');return;}
   if(!selectedCardForReceive){alert('카드를 선택해주세요.');return;}
   if(!proj){alert('현장을 선택해주세요.');return;}
   const projParts=proj.split('|');
   const projBiz=projParts[0],projNum=projParts[1],projName=projParts[2];
   const isMatch=selectedCardForReceive.biz===projBiz;
+  const d=new Date(cardDateVal+'T00:00:00');
+  const dateStr=`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
   const payload={
     type:'cardReceive',
-    date:getTodayStr(),
+    date:dateStr,
     receiver,
     cardCo:selectedCardForReceive.cardCo,
     last4:selectedCardForReceive.last4,
@@ -458,17 +587,23 @@ async function submitCardReceive(){
   };
   showLoading('등록 중...');
   try {
-    await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payload)});
+    const res=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payload)}).then(r=>r.json());
     hideLoading();
+    if(res.result==='duplicate'){alert('⚠️ '+res.message+'
+
+같은 날짜에 이미 등록된 카드입니다.');return;}
     document.getElementById('card-form').style.display='none';
     document.getElementById('card-complete-box').classList.add('show');
     document.getElementById('card-complete-desc').textContent=`${receiver} → ${selectedCardForReceive.cardCo}(${selectedCardForReceive.last4}) → ${projName}`;
+    await loadCardHistory();
+    await loadUnsubmittedBanner();
   } catch(e){hideLoading();alert('등록 중 오류가 발생했습니다.');}
 }
 
 function resetCardForm(){
   document.getElementById('card-complete-box').classList.remove('show');
   document.getElementById('card-form').style.display='block';
+  document.getElementById('card-date').value=todayObj.toISOString().split('T')[0];
   document.getElementById('card-receiver').value='';
   document.getElementById('card-receiver-custom').value='';
   document.querySelectorAll('.receive-card-chip').forEach(x=>x.classList.remove('on'));
@@ -557,13 +692,19 @@ async function loadMasterData(){
   } catch(e){console.error(e);}
   hideLoading();
   document.getElementById('work-date').value=todayObj.toISOString().split('T')[0];
+  loadUnsubmittedBanner();
 }
 
-async function buildProjectSelect(){
+async function buildProjectSelect(targetDate){
   const sel=document.getElementById('proj-sel');
   sel.innerHTML='<option value="">— 프로젝트 선택 —</option>';
   try {
-    const dateStr=getTodayStr();
+    const workDateVal=document.getElementById('work-date').value;
+    let dateStr=targetDate||getTodayStr();
+    if(!targetDate&&workDateVal){
+      const d=new Date(workDateVal+'T00:00:00');
+      dateStr=`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+    }
     const res=await fetch(`${SCRIPT_URL}?action=getCardStatus&date=${encodeURIComponent(dateStr)}`).then(r=>r.json());
     const outCards=res.data?res.data.filter(c=>c.status==='외출중'):[];
     const receivedProjNums=outCards.map(c=>c.projNum).filter(Boolean);
@@ -579,6 +720,9 @@ async function buildProjectSelect(){
         return;
       }
     }
+    // 당일 카드수령 없으면 경고
+    const noWarn=document.getElementById('no-card-warn');
+    if(noWarn&&!targetDate)noWarn.style.display='block';
   } catch(e){}
   masterData.projects.forEach(p=>{
     const opt=document.createElement('option');
@@ -622,6 +766,9 @@ function toggleNoInvoice(cb){
 }
 
 async function onDateOrProjChange(){
+  // 날짜 변경 시 현장 목록 갱신
+  document.getElementById('no-card-warn').style.display='none';
+  await buildProjectSelect();
   const proj=document.getElementById('proj-sel').value;
   if(!proj){document.getElementById('form-body').style.display='none';document.getElementById('history-box').style.display='none';return;}
   const projNum=getProjNum();
@@ -876,6 +1023,21 @@ function showConfirm(){
     const expCard=getSelectedExpenseCard();
   const hasExpItems=document.querySelectorAll('.item-box[id^="exp-"]').length>0;
   if(!noExpense&&hasExpItems&&!expCard){alert('사용 카드를 선택해주세요.');return;}
+  // 수령카드 vs 사용카드 대조
+  if(expCard&&!expCard.isPersonal){
+    try{
+      const dateStr=getSelectedDate();
+      const statusRes=await fetch(`${SCRIPT_URL}?action=getCardStatus&date=${encodeURIComponent(dateStr)}`).then(r=>r.json());
+      const myCard=statusRes.data?statusRes.data.find(c=>c.status==='외출중'&&c.projNum===getProjNum()):null;
+      if(myCard&&(myCard.cardCo!==expCard.cardCo||myCard.last4!==expCard.last4)){
+        const ok=confirm(`⚠️ 수령 카드(${myCard.cardCo}(${myCard.last4}))와
+사용 카드(${expCard.cardCo}(${expCard.last4}))가 다릅니다!
+
+계속 제출하시겠어요?`);
+        if(!ok)return;
+      }
+    }catch(e){}
+  }
   if(document.getElementById('expense-card-warn').classList.contains('show')&&!document.getElementById('expense-warn-ck').checked){alert('카드 불일치 항목을 확인 후 체크해주세요.');return;}
   if(document.getElementById('expense-personal-warn').classList.contains('show')&&!document.getElementById('expense-personal-ck').checked){alert('개인카드 영수증 첨부 확인 체크를 해주세요.');return;}
   submitPayload=buildPayload();
