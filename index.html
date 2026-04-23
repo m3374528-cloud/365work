@@ -465,9 +465,28 @@ async function goToWrite(date, projNum){
       } else {
         currentMode='new';currentSeq=1;
         showFormBody();
+        // 해당 날짜+현장의 수령 카드 자동 선택
+        setTimeout(()=>autoSelectCard(date, projNum2), 300);
       }
     }catch(e){hideLoading();showFormBody();}
   }
+}
+
+// 날짜+현장 기준 수령 카드 자동선택
+async function autoSelectCard(date, projNum){
+  try {
+    const res=await fetch(`${SCRIPT_URL}?action=getCardStatus&date=${encodeURIComponent(date)}`).then(r=>r.json());
+    if(!res.data)return;
+    const matched=res.data.find(c=>c.status==='외출중'&&c.projNum===projNum);
+    if(!matched)return;
+    // 경비 카드 칩에서 해당 카드 선택
+    const chips=document.querySelectorAll('#expense-cards .card-chip');
+    chips.forEach(chip=>{
+      if(chip.dataset.cardco===matched.cardCo&&chip.dataset.last4===String(matched.last4).padStart(4,'0')){
+        selExpenseCard(chip);
+      }
+    });
+  } catch(e){}
 }
 
 // ========== 카드 수령 이력 ==========
