@@ -393,7 +393,7 @@ function switchTab(tab){
   if(tab==='status'){loadCardStatus();loadAllCardHistory();}
   if(tab==='card'){loadCardHistory();}
   if(tab==='write'||tab==='card')loadUnsubmittedBanner();
-  if(tab==='write'){document.getElementById('no-card-warn').style.display='none';buildProjectSelect();}
+  if(tab==='write'){document.getElementById('no-card-warn').style.display='none';refreshProjectList();}
   if(tab==='card'){buildCardReceiveUI();}
 }
 
@@ -415,24 +415,54 @@ async function loadUnsubmittedBanner(){
   } catch(e){}
 }
 
-function goToWrite(date, projNum){
-  switchTab('write');
+async function goToWrite(date, projNum){
+  // 탭 전환
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.getElementById('tab-write').classList.add('on');
+  document.getElementById('page-write').classList.add('on');
+  window.scrollTo(0,0);
+
   // 날짜 설정
   const parts=date.split('.');
   if(parts.length===3){
     const d=`${parts[0]}-${parts[1].padStart(2,'0')}-${parts[2].padStart(2,'0')}`;
     document.getElementById('work-date').value=d;
   }
-  // 프로젝트 선택
-  setTimeout(async()=>{
-    await buildProjectSelect(date);
-    const sel=document.getElementById('proj-sel');
-    for(let i=0;i<sel.options.length;i++){
-      if(sel.options[i].value.includes(projNum)){sel.selectedIndex=i;break;}
+
+  // 해당 날짜 기준 현장 목록 불러오기
+  document.getElementById('no-card-warn').style.display='none';
+  await buildProjectSelect(date);
+
+  // 프로젝트 자동 선택
+  const sel=document.getElementById('proj-sel');
+  for(let i=0;i<sel.options.length;i++){
+    if(sel.options[i].value.includes(projNum)){
+      sel.selectedIndex=i;
+      break;
     }
-    onDateOrProjChange();
-  },300);
-  window.scrollTo(0,0);
+  }
+
+  // 폼 표시 (이력 체크 없이 바로)
+  document.getElementById('history-box').style.display='none';
+  document.getElementById('edit-banner').classList.remove('show');
+
+  // 제출 이력 확인
+  const projVal=sel.value;
+  if(projVal){
+    const projNum2=projVal.split('|')[1];
+    showLoading('제출 이력 확인 중...');
+    try{
+      const res=await fetch(`${SCRIPT_URL}?action=checkSubmit&date=${encodeURIComponent(date)}&projNum=${encodeURIComponent(projNum2)}`).then(r=>r.json());
+      hideLoading();
+      if(res.data&&res.data.length>0){
+        showHistory(res.data);
+      } else {
+        currentMode='new';currentSeq=1;
+        showFormBody();
+      }
+    }catch(e){hideLoading();showFormBody();}
+  }
 }
 
 // ========== 카드 수령 이력 ==========
@@ -530,12 +560,15 @@ function buildCardReceiveUI(){
   // 카드 칩
   const wrap=document.getElementById('card-chips');wrap.innerHTML='';
   masterData.cards.forEach(c=>{
+    const last4=String(c.last4).padStart(4,'0');
     const div=document.createElement('div');div.className='receive-card-chip';
-    div.textContent=`${c.cardCo}(${c.last4})`;
-    div.dataset.cardco=c.cardCo;div.dataset.last4=c.last4;div.dataset.biz=c.biz;
+    div.textContent=`${c.cardCo}(${last4})`;
+    div.dataset.cardco=c.cardCo;div.dataset.last4=last4;div.dataset.biz=c.biz;
     div.onclick=()=>{
       document.querySelectorAll('.receive-card-chip').forEach(x=>x.classList.remove('on'));
-      div.classList.add('on');selectedCardForReceive=c;checkCardMatch();
+      div.classList.add('on');selectedCardForReceive={...c,last4};
+      filterCardProjByBiz(c.biz);
+      checkCardMatch();
     };
     wrap.appendChild(div);
   });
@@ -547,6 +580,19 @@ function buildCardReceiveUI(){
     opt.value=`${p.biz}|${p.projNum}|${p.projName}`;
     opt.textContent=`[${p.biz} ${p.projNum}] ${p.projName}`;
     psel.appendChild(opt);
+  });
+}
+
+function filterCardProjByBiz(biz){
+  const psel=document.getElementById('card-proj');
+  psel.innerHTML='<option value="">— 현장 선택 —</option>';
+  masterData.projects.forEach(p=>{
+    if(p.biz===biz){
+      const opt=document.createElement('option');
+      opt.value=`${p.biz}|${p.projNum}|${p.projName}`;
+      opt.textContent=`[${p.projNum}] ${p.projName}`;
+      psel.appendChild(opt);
+    }
   });
 }
 
@@ -607,7 +653,15 @@ function resetCardForm(){
   document.getElementById('card-receiver').value='';
   document.getElementById('card-receiver-custom').value='';
   document.querySelectorAll('.receive-card-chip').forEach(x=>x.classList.remove('on'));
-  document.getElementById('card-proj').value='';
+  // 현장 목록 전체 복원
+  const psel=document.getElementById('card-proj');
+  psel.innerHTML='<option value="">— 현장 선택 —</option>';
+  masterData.projects.forEach(p=>{
+    const opt=document.createElement('option');
+    opt.value=`${p.biz}|${p.projNum}|${p.projName}`;
+    opt.textContent=`[${p.biz} ${p.projNum}] ${p.projName}`;
+    psel.appendChild(opt);
+  });
   document.getElementById('card-match-ok').classList.remove('show');
   document.getElementById('card-match-warn').classList.remove('show');
   selectedCardForReceive=null;
@@ -687,7 +741,9 @@ async function loadMasterData(){
       fetch(`${SCRIPT_URL}?action=getExpenseItems`).then(r=>r.json())
     ]);
     masterData.projects=proj.data||[];masterData.workers=workers.data||[];
-    masterData.equipments=equip.data||[];masterData.cards=cards.data||[];masterData.expenseItems=items.data||[];
+    masterData.equipments=equip.data||[];
+    masterData.cards=(cards.data||[]).map(c=>({...c,last4:String(c.last4).padStart(4,'0')}));
+    masterData.expenseItems=items.data||[];
     buildWorkerChips();buildTimePickers();buildExpenseCardChips();buildCardReceiveUI();
   } catch(e){console.error(e);}
   hideLoading();
@@ -854,9 +910,10 @@ function buildExpenseCardChips(){
   if(!wrap)return;
   wrap.innerHTML='';
   masterData.cards.forEach(c=>{
+    const last4=String(c.last4).padStart(4,'0');
     const div=document.createElement('div');div.className='card-chip';
-    div.textContent=`${c.cardCo}(${c.last4})`;
-    div.dataset.biz=c.biz;div.dataset.cardco=c.cardCo;div.dataset.last4=c.last4;div.dataset.personal='false';
+    div.textContent=`${c.cardCo}(${last4})`;
+    div.dataset.biz=c.biz;div.dataset.cardco=c.cardCo;div.dataset.last4=last4;div.dataset.personal='false';
     div.onclick=()=>selExpenseCard(div);
     wrap.appendChild(div);
   });
