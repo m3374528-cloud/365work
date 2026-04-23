@@ -472,17 +472,19 @@ async function goToWrite(date, projNum){
   }
 }
 
-// 날짜+현장 기준 수령 카드 자동선택
+// 날짜+현장 기준 수령 카드 자동선택 (이력에서 직접 조회)
 async function autoSelectCard(date, projNum){
   try {
-    const res=await fetch(`${SCRIPT_URL}?action=getCardStatus&date=${encodeURIComponent(date)}`).then(r=>r.json());
+    const res=await fetch(`${SCRIPT_URL}?action=getCardHistory`).then(r=>r.json());
     if(!res.data)return;
-    const matched=res.data.find(c=>c.status==='외출중'&&c.projNum===projNum);
+    // 해당 날짜 + 현장 기준으로 수령 카드 찾기
+    const matched=res.data.find(r=>r.date===date&&r.projNum===projNum);
     if(!matched)return;
+    const targetLast4=String(matched.last4).padStart(4,'0');
     // 경비 카드 칩에서 해당 카드 선택
     const chips=document.querySelectorAll('#expense-cards .card-chip');
     chips.forEach(chip=>{
-      if(chip.dataset.cardco===matched.cardCo&&chip.dataset.last4===String(matched.last4).padStart(4,'0')){
+      if(chip.dataset.cardco===matched.cardCo&&chip.dataset.last4===targetLast4){
         selExpenseCard(chip);
       }
     });
