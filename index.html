@@ -430,12 +430,17 @@ async function goToWrite(date, projNum){
     document.getElementById('work-date').value=d;
   }
 
-  // 해당 날짜 기준 현장 목록 불러오기
-  document.getElementById('no-card-warn').style.display='none';
-  await buildProjectSelect(date);
+  // 현장 목록 전체 불러오기
+  const sel=document.getElementById('proj-sel');
+  sel.innerHTML='<option value="">— 프로젝트 선택 —</option>';
+  masterData.projects.forEach(p=>{
+    const opt=document.createElement('option');
+    opt.value=`${p.biz}|${p.projNum}|${p.projName}`;
+    opt.textContent=`[${p.biz} ${p.projNum}] ${p.projName}`;
+    sel.appendChild(opt);
+  });
 
   // 프로젝트 자동 선택
-  const sel=document.getElementById('proj-sel');
   for(let i=0;i<sel.options.length;i++){
     if(sel.options[i].value.includes(projNum)){
       sel.selectedIndex=i;
@@ -443,7 +448,7 @@ async function goToWrite(date, projNum){
     }
   }
 
-  // 폼 표시 (이력 체크 없이 바로)
+  document.getElementById('no-card-warn').style.display='none';
   document.getElementById('history-box').style.display='none';
   document.getElementById('edit-banner').classList.remove('show');
 
