@@ -207,7 +207,14 @@ input[type=checkbox]{width:16px!important;height:16px;cursor:pointer;flex-shrink
       <span>~</span>
       <select id="ot-end" style="flex:1"></select>
     </div>
+    <div class="lbl" style="margin-top:10px">잔업 참여 작업자</div>
+    <div class="chip-wrap" id="ot-worker-wrap" style="margin-top:6px"></div>
+    <p style="font-size:11px;color:#bbb;margin-top:4px">전체 작업자 중 잔업에 참여한 인원만 선택하세요</p>
   </div>
+</div>
+<div class="section">
+  <div class="sec-title">기타 입력사항</div>
+  <input type="text" id="extra-note" placeholder="예) 김덕수 13:00 조기퇴근, 특이사항 등">
 </div>
 <div class="section">
   <div class="sec-title">경비 사용 내역</div>
@@ -849,7 +856,24 @@ function makeTimes(selId,from,to,defVal){
   sel.value=defVal;
 }
 
-function toggleOT(cb){document.getElementById('ot-wrap').style.display=cb.checked?'block':'none';}
+function toggleOT(cb){
+  document.getElementById('ot-wrap').style.display=cb.checked?'block':'none';
+  if(cb.checked) syncOTWorkers();
+}
+
+function syncOTWorkers(){
+  // 전체 작업자 중 선택된 인원을 잔업자 칩에 동기화
+  const wrap=document.getElementById('ot-worker-wrap');
+  wrap.innerHTML='';
+  const selected=Array.from(document.querySelectorAll('#worker-wrap .chip.on')).map(c=>c.textContent);
+  const extra=document.getElementById('extra-workers').value.trim();
+  const allWorkers=[...selected,...(extra?extra.split(',').map(s=>s.trim()).filter(Boolean):[])];
+  allWorkers.forEach(name=>{
+    const div=document.createElement('div');div.className='chip';div.textContent=name;
+    div.onclick=()=>div.classList.toggle('on');
+    wrap.appendChild(div);
+  });
+}
 function toggleNoExpense(cb){
   document.getElementById('expense-body').classList.toggle('disabled-section',cb.checked);
   if(cb.checked){receiptFiles=[];document.getElementById('receipt-preview').innerHTML='';document.getElementById('add-photo-btn').style.display='none';}
@@ -917,6 +941,8 @@ function resetForm(){
   document.getElementById('add-invoice-btn').style.display='none';
   document.getElementById('ot-chk').checked=false;
   document.getElementById('ot-wrap').style.display='none';
+  document.getElementById('ot-worker-wrap').innerHTML='';
+  if(document.getElementById('extra-note'))document.getElementById('extra-note').value='';
   document.getElementById('no-expense-chk').checked=false;
   document.getElementById('no-invoice-chk').checked=false;
   document.getElementById('expense-body').classList.remove('disabled-section');
@@ -1081,6 +1107,8 @@ function buildPayload(){
   const timeStart=document.getElementById('t-start').value,timeEnd=document.getElementById('t-end').value;
   const otChk=document.getElementById('ot-chk').checked;
   const overtime=otChk?`${document.getElementById('ot-start').value}~${document.getElementById('ot-end').value}`:'';
+  const otWorkers=otChk?Array.from(document.querySelectorAll('#ot-worker-wrap .chip.on')).map(c=>c.textContent).join(', '):'';
+  const extraNote=document.getElementById('extra-note')?.value.trim()||'';
   const noExpense=document.getElementById('no-expense-chk').checked;
   const noInvoice=document.getElementById('no-invoice-chk').checked;
   const expenses=[];
@@ -1102,12 +1130,14 @@ function buildPayload(){
     if(!typeEl)return;
     equips.push({type:typeEl.textContent,company,supplyAmt:supply,vatAmt:Math.round(supply*0.1),totalAmt:supply+Math.round(supply*0.1)});
   });
-  return{type:'expense',date:dateStr,projNum,projName,projBiz,workers,workerCount:selectedWorkers.length,timeStart,timeEnd,overtime,expenses,equips,noExpense,noInvoice,receiptCount:receiptFiles.length,invoiceCount:invoiceFiles.length,writer,submitTime,seq:currentSeq,isRevision:currentMode==='edit'};
+  return{type:'expense',date:dateStr,projNum,projName,projBiz,workers,workerCount:selectedWorkers.length,timeStart,timeEnd,overtime,otWorkers,extraNote,expenses,equips,noExpense,noInvoice,receiptCount:receiptFiles.length,invoiceCount:invoiceFiles.length,writer,submitTime,seq:currentSeq,isRevision:currentMode==='edit'};
 }
 
 async function showConfirm(){
   const proj=document.getElementById('proj-sel').value;
   const writer=document.getElementById('writer').value.trim();
+  const otWorkers=otChk?Array.from(document.querySelectorAll('#ot-worker-wrap .chip.on')).map(c=>c.textContent).join(', '):'';
+  const extraNote=document.getElementById('extra-note')?.value.trim()||'';
   const noExpense=document.getElementById('no-expense-chk').checked;
   if(!proj){alert('프로젝트를 선택해주세요.');return;}
   if(!writer){alert('작성자를 입력해주세요.');return;}
@@ -1136,6 +1166,8 @@ async function showConfirm(){
     <div class="confirm-row"><span class="confirm-label">프로젝트</span><span class="confirm-value">${submitPayload.projNum}</span></div>
     <div class="confirm-row"><span class="confirm-label">작업자</span><span class="confirm-value">${submitPayload.workers||'미선택'} (${submitPayload.workerCount}명)</span></div>
     <div class="confirm-row"><span class="confirm-label">작업시간</span><span class="confirm-value">${submitPayload.timeStart}~${submitPayload.timeEnd}${submitPayload.overtime?` / 잔업 ${submitPayload.overtime}`:''}</span></div>
+    ${submitPayload.otWorkers?`<div class="confirm-row"><span class="confirm-label">잔업자</span><span class="confirm-value">${submitPayload.otWorkers}</span></div>`:''}
+    ${submitPayload.extraNote?`<div class="confirm-row"><span class="confirm-label">기타사항</span><span class="confirm-value">${submitPayload.extraNote}</span></div>`:''}
     <div class="confirm-row"><span class="confirm-label">작성자</span><span class="confirm-value">${submitPayload.writer}</span></div>`;
   if(submitPayload.noExpense){
     html+=`<div class="confirm-row"><span class="confirm-label">경비</span><span class="confirm-value" style="color:#888">경비 사용 없음</span></div>`;
