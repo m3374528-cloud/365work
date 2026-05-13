@@ -1136,6 +1136,7 @@ function buildPayload(){
 async function showConfirm(){
   const proj=document.getElementById('proj-sel').value;
   const writer=document.getElementById('writer').value.trim();
+  const otChk=document.getElementById('ot-chk').checked;
   const otWorkers=otChk?Array.from(document.querySelectorAll('#ot-worker-wrap .chip.on')).map(c=>c.textContent).join(', '):'';
   const extraNote=document.getElementById('extra-note')?.value.trim()||'';
   const noExpense=document.getElementById('no-expense-chk').checked;
@@ -1160,15 +1161,15 @@ async function showConfirm(){
   if(document.getElementById('expense-card-warn').classList.contains('show')&&!document.getElementById('expense-warn-ck').checked){alert('카드 불일치 항목을 확인 후 체크해주세요.');return;}
   if(document.getElementById('expense-personal-warn').classList.contains('show')&&!document.getElementById('expense-personal-ck').checked){alert('개인카드 영수증 첨부 확인 체크를 해주세요.');return;}
   submitPayload=buildPayload();
-  let html=`
-    <div class="confirm-row"><span class="confirm-label">날짜</span><span class="confirm-value">${submitPayload.date}</span></div>
-    <div class="confirm-row"><span class="confirm-label">현장</span><span class="confirm-value">${submitPayload.projName}</span></div>
-    <div class="confirm-row"><span class="confirm-label">프로젝트</span><span class="confirm-value">${submitPayload.projNum}</span></div>
-    <div class="confirm-row"><span class="confirm-label">작업자</span><span class="confirm-value">${submitPayload.workers||'미선택'} (${submitPayload.workerCount}명)</span></div>
-    <div class="confirm-row"><span class="confirm-label">작업시간</span><span class="confirm-value">${submitPayload.timeStart}~${submitPayload.timeEnd}${submitPayload.overtime?` / 잔업 ${submitPayload.overtime}`:''}</span></div>
-    ${submitPayload.otWorkers?`<div class="confirm-row"><span class="confirm-label">잔업자</span><span class="confirm-value">${submitPayload.otWorkers}</span></div>`:''}
-    ${submitPayload.extraNote?`<div class="confirm-row"><span class="confirm-label">기타사항</span><span class="confirm-value">${submitPayload.extraNote}</span></div>`:''}
-    <div class="confirm-row"><span class="confirm-label">작성자</span><span class="confirm-value">${submitPayload.writer}</span></div>`;
+  let html='';
+  html+='<div class="confirm-row"><span class="confirm-label">날짜</span><span class="confirm-value">'+submitPayload.date+'</span></div>';
+  html+='<div class="confirm-row"><span class="confirm-label">현장</span><span class="confirm-value">'+submitPayload.projName+'</span></div>';
+  html+='<div class="confirm-row"><span class="confirm-label">프로젝트</span><span class="confirm-value">'+submitPayload.projNum+'</span></div>';
+  html+='<div class="confirm-row"><span class="confirm-label">작업자</span><span class="confirm-value">'+(submitPayload.workers||'미선택')+' ('+submitPayload.workerCount+'명)</span></div>';
+  html+='<div class="confirm-row"><span class="confirm-label">작업시간</span><span class="confirm-value">'+submitPayload.timeStart+'~'+submitPayload.timeEnd+(submitPayload.overtime?' / 잔업 '+submitPayload.overtime:'')+'</span></div>';
+  if(submitPayload.otWorkers)html+='<div class="confirm-row"><span class="confirm-label">잔업자</span><span class="confirm-value">'+submitPayload.otWorkers+'</span></div>';
+  if(submitPayload.extraNote)html+='<div class="confirm-row"><span class="confirm-label">기타사항</span><span class="confirm-value">'+submitPayload.extraNote+'</span></div>';
+  html+='<div class="confirm-row"><span class="confirm-label">작성자</span><span class="confirm-value">'+submitPayload.writer+'</span></div>';
   if(submitPayload.noExpense){
     html+=`<div class="confirm-row"><span class="confirm-label">경비</span><span class="confirm-value" style="color:#888">경비 사용 없음</span></div>`;
   } else if(submitPayload.expenses.length>0){
