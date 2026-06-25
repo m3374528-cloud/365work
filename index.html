@@ -115,8 +115,6 @@ textarea{resize:none;height:60px}
 <div class="tab-bar">
   <div class="tab on" id="tab-write" onclick="switchTab('write')">&#9999;&#65039; 작업일보</div>
   <div class="tab" id="tab-view" onclick="switchTab('view')">&#128203; 확인</div>
-  <div class="tab" id="tab-card" onclick="switchTab('card')">&#128179; 카드수령</div>
-  <div class="tab" id="tab-status" onclick="switchTab('status')">&#128202; 카드현황</div>
 </div>
 
 <!-- 작성 탭 -->
@@ -126,7 +124,11 @@ textarea{resize:none;height:60px}
     <p id="today-date" style="font-size:12px;color:#888"></p>
   </div>
   <div id="unsub-banner-write"></div>
-  <div class="no-card-warn" id="no-card-warn">&#9888;&#65039; 카드수령 등록된 현장이 없습니다. 먼저 카드수령 탭에서 등록해주세요.</div>
+  <!-- 현장팀/영업팀 구분 선택 -->
+  <div style="display:flex;gap:8px;margin-bottom:12px">
+    <button id="btn-field" onclick="selectTeam('field')" style="flex:1;padding:12px;border:1.5px solid #ccc;border-radius:10px;font-size:14px;font-weight:500;background:#fff;color:#888;cursor:pointer">&#127968; 현장팀</button>
+    <button id="btn-sales" onclick="selectTeam('sales')" style="flex:1;padding:12px;border:1.5px solid #ccc;border-radius:10px;font-size:14px;font-weight:500;background:#fff;color:#888;cursor:pointer">&#128188; 영업팀</button>
+  </div>
   <div class="edit-banner" id="edit-banner">&#9999;&#65039; 수정 모드 — 기존 내용을 수정 후 제출하세요</div>
 
   <!-- 이력 화면 -->
@@ -458,43 +460,91 @@ function buildUI(){
 // ===== 프로젝트 =====
 async function buildProjectSelect(){
   var sel=document.getElementById('proj-sel');
-  var dateVal=document.getElementById('work-date').value;
-  if(!dateVal)return;
-  var d=new Date(dateVal+'T00:00:00');
-  var ds=toDateStr(d);
   sel.innerHTML='<option value="">— 프로젝트 선택 —</option>';
-  try{
-    var res=await fetchJ(SCRIPT_URL+'?action=getCardHistory&date='+encodeURIComponent(ds));
-    var history=res.data||[];
-    if(history.length===0){
-      document.getElementById('no-card-warn').style.display='block';
-      return;
-    }
-    document.getElementById('no-card-warn').style.display='none';
-    var addedProjs=[];
-    history.forEach(function(h){
-      if(addedProjs.indexOf(h.projNum)!==-1)return;
-      var proj=masterData.projects.find(function(p){return p.projNum===h.projNum;});
-      if(proj){
-        var opt=document.createElement('option');
-        opt.value=proj.biz+'|'+proj.projNum+'|'+proj.projName;
-        opt.textContent='['+proj.projNum+'] '+proj.projName;
-        sel.appendChild(opt);
-        addedProjs.push(h.projNum);
-      }
+  masterData.projects.forEach(function(p){
+    var opt=document.createElement('option');
+    opt.value=p.biz+'|'+p.projNum+'|'+p.projName;
+    opt.textContent='['+p.projNum+'] '+p.projName;
+    sel.appendChild(opt);
+  });
+}
+
+// 팀 구분 선택
+var currentTeam='';
+var salesCards=[
+  {name:'조항신',cardCo:'컴퍼니',last4:'0902',biz:'삼육오컴퍼니'},
+  {name:'김원일',cardCo:'안전관리',last4:'5959',biz:'삼육오안전관리'},
+  {name:'백상혁',cardCo:'철거인',last4:'7728',biz:'철거인'}
+];
+
+function selectTeam(team){
+  currentTeam=team;
+  var btnField=document.getElementById('btn-field');
+  var btnSales=document.getElementById('btn-sales');
+  if(team==='field'){
+    btnField.style.background='#1D9E75';btnField.style.color='#fff';btnField.style.borderColor='#1D9E75';
+    btnSales.style.background='#fff';btnSales.style.color='#888';btnSales.style.borderColor='#ccc';
+    // 현장팀: 기존 카드 목록 복원
+    rebuildExpenseCards(false);
+  } else {
+    btnSales.style.background='#1D9E75';btnSales.style.color='#fff';btnSales.style.borderColor='#1D9E75';
+    btnField.style.background='#fff';btnField.style.color='#888';btnField.style.borderColor='#ccc';
+    // 영업팀: 영업사원 카드로 교체
+    rebuildExpenseCards(true);
+  }
+}
+
+function rebuildExpenseCards(isSales){
+  var wrap=document.getElementById('expense-cards');
+  if(!wrap)return;
+  wrap.innerHTML='';
+  if(isSales){
+    salesCards.forEach(function(sc){
+      var div=document.createElement('div');
+      div.className='card-chip';
+      div.textContent=sc.cardCo+'('+sc.last4+') '+sc.name;
+      div.dataset.cardCo=sc.cardCo;
+      div.dataset.last4=sc.last4;
+      div.dataset.biz=sc.biz;
+      div.dataset.isPersonal='false';
+      div.onclick=function(){
+        wrap.querySelectorAll('.card-chip').forEach(function(c){c.classList.remove('on');});
+        div.classList.add('on');
+        document.getElementById('personal-name-wrap').style.display='none';
+      };
+      wrap.appendChild(div);
     });
-  }catch(e){
-    masterData.projects.forEach(function(p){
-      var opt=document.createElement('option');
-      opt.value=p.biz+'|'+p.projNum+'|'+p.projName;
-      opt.textContent='['+p.projNum+'] '+p.projName;
-      sel.appendChild(opt);
+  } else {
+    masterData.cards.forEach(function(c){
+      var div=document.createElement('div');
+      div.className='card-chip';
+      div.textContent=c.cardCo+'('+c.last4+')';
+      div.dataset.cardCo=c.cardCo;
+      div.dataset.last4=c.last4;
+      div.dataset.biz=c.biz;
+      div.dataset.isPersonal='false';
+      div.onclick=function(){
+        wrap.querySelectorAll('.card-chip').forEach(function(c2){c2.classList.remove('on');});
+        div.classList.add('on');
+        document.getElementById('personal-name-wrap').style.display='none';
+      };
+      wrap.appendChild(div);
     });
+    // 개인카드 버튼
+    var personal=document.createElement('div');
+    personal.className='card-chip';
+    personal.textContent='개인카드';
+    personal.dataset.isPersonal='true';
+    personal.onclick=function(){
+      wrap.querySelectorAll('.card-chip').forEach(function(c2){c2.classList.remove('on');});
+      personal.classList.add('on');
+      document.getElementById('personal-name-wrap').style.display='block';
+    };
+    wrap.appendChild(personal);
   }
 }
 
 async function refreshProjectList(){
-  document.getElementById('no-card-warn').style.display='none';
   document.getElementById('proj-sel').innerHTML='<option value="">— 프로젝트 선택 —</option>';
   await buildProjectSelect();
   onDateOrProjChange();
@@ -613,7 +663,7 @@ function buildWorkerChips(){
   var jungHtml='<div style="font-size:12px;color:#1D9E75;font-weight:500;margin-bottom:6px">정성인력 출역 인원수</div>';
   jungHtml+='<select id="jung-count" style="width:100%;padding:8px 10px;border:0.5px solid #ccc;border-radius:8px;font-size:13px" onchange="calcJungLabor()">';
   for(var i=1;i<=15;i++){
-    jungHtml+='<option value="'+i+'">'+i+'명 ('+( i*180000).toLocaleString()+'원)</option>';
+    jungHtml+='<option value="'+i+'">'+i+'명</option>';
   }
   jungHtml+='</select>';
   jungHtml+='<div style="font-size:12px;color:#1D9E75;margin-top:6px" id="jung-total">노무비: 180,000원</div>';
@@ -916,6 +966,7 @@ function addWatermark(file,type){
 
 // ===== 확인 화면 =====
 function showConfirm(){
+  if(!currentTeam){alert('현장팀/영업팀 작업현장 구분을 해주세요.');return;}
   var proj=document.getElementById('proj-sel').value;
   var writer=document.getElementById('writer').value.trim();
   if(!proj){alert('프로젝트를 선택해주세요.');return;}
@@ -970,7 +1021,7 @@ function showConfirm(){
     noInvoice:document.getElementById('no-invoice-chk').checked,
     receiptCount:receiptFiles.length,invoiceCount:invoiceFiles.length,
     writer:writer,submitTime:new Date().toLocaleString('ko-KR'),
-    seq:currentSeq,isRevision:currentMode==='edit',laborData:laborData
+    seq:currentSeq,isRevision:currentMode==='edit',laborData:laborData,teamType:currentTeam
   };
 
   var html='';
