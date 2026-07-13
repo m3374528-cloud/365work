@@ -341,8 +341,8 @@ function switchTab(t){
 
 // ===== 초기 로딩 =====
 async function loadMasterData(){
-  var CACHE_KEY='365work_master';
-  var CACHE_TIME='365work_master_time';
+  var CACHE_KEY='365work_master_v2';
+  var CACHE_TIME='365work_master_time_v2';
   var CACHE_TTL=30*60*1000;
   try{
     var cached=localStorage.getItem(CACHE_KEY);
@@ -398,7 +398,6 @@ function buildUI(){
 async function buildProjectSelect(){
   var sel=document.getElementById('proj-sel');
   sel.innerHTML='<option value="">— 프로젝트 선택 —</option>';
-  document.getElementById('no-card-warn').style.display='none';
   masterData.projects.forEach(function(p){
     var opt=document.createElement('option');
     opt.value=p.biz+'|'+p.projNum+'|'+p.projName;
