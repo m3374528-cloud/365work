@@ -1123,11 +1123,24 @@ async function showDetail(projNum,ds){
 }
 
 async function shareDetail(){
+  var wrapper=null;
   try{
     showL('이미지 생성 중...');
-    // 여백 포함 래퍼 생성
-    var wrapper=document.createElement('div');
-    wrapper.style.cssText='background:#f5f5f0;padding:20px;border-radius:0;min-width:360px;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif';
+    // html2canvas 로드 (중복 로드 방지)
+    if(!window.html2canvas){
+      await new Promise(function(res,rej){
+        var s=document.createElement('script');
+        s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        s.onload=res; s.onerror=rej;
+        document.head.appendChild(s);
+      });
+    }
+    // 캡처용 래퍼 (고정 폭 + 여백)
+    var IMG_W=460;   // 이미지 가로폭 (좁거나 넓으면 이 숫자만 조정)
+    wrapper=document.createElement('div');
+    wrapper.style.cssText='position:absolute;left:-10000px;top:0;width:'+IMG_W+'px;box-sizing:border-box;'+
+      'background:#f5f5f0;padding:20px;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;'+
+      'font-size:14px;color:#1a1a1a;overflow:visible';
     // 상단 타이틀
     var header=document.createElement('div');
     header.style.cssText='text-align:center;margin-bottom:16px';
@@ -1136,50 +1149,65 @@ async function shareDetail(){
     wrapper.appendChild(header);
     // 내용 카드
     var card=document.createElement('div');
-    card.style.cssText='background:#fff;border-radius:14px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06)';
+    card.style.cssText='background:#fff;border-radius:14px;padding:16px;box-sizing:border-box;width:100%;'+
+      'overflow:visible;box-shadow:0 2px 8px rgba(0,0,0,0.06)';
     card.innerHTML=document.getElementById('detail-body').innerHTML;
-    // 버튼 제거
+    // 버튼 영역 제거
     var btnWrap=card.querySelector('div[style*="grid-template-columns"]');
-    if(btnWrap)btnWrap.remove();
+    if(btnWrap&&btnWrap.parentNode)btnWrap.parentNode.removeChild(btnWrap);
     wrapper.appendChild(card);
     // 하단 워터마크
     var footer=document.createElement('div');
     footer.style.cssText='text-align:center;margin-top:14px;font-size:11px;color:#aaa';
     footer.textContent='bit.ly/365work';
     wrapper.appendChild(footer);
-    // 임시로 화면 밖에 추가
-    wrapper.style.position='fixed';
-    wrapper.style.left='-9999px';
-    wrapper.style.top='0';
     document.body.appendChild(wrapper);
-    var script=document.createElement('script');
-    script.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-    document.head.appendChild(script);
-    script.onload=async function(){
-      var canvas=await html2canvas(wrapper,{backgroundColor:'#f5f5f0',scale:2,useCORS:true});
-      document.body.removeChild(wrapper);
-      canvas.toBlob(async function(blob){
-        hideL();
-        if(navigator.share&&navigator.canShare&&navigator.canShare({files:[new File([blob],'작업일보.png',{type:'image/png'})]})){
-          try{
-            await navigator.share({
-              files:[new File([blob],'작업일보_'+currentDetailDs+'_'+currentDetailProjNum+'.png',{type:'image/png'})],
-              title:'작업일보',
-              text:currentDetailDs+' '+currentDetailProjNum
-            });
-          }catch(e){
-            if(e.name!=='AbortError')alert('공유 중 오류가 발생했습니다.');
-          }
-        } else {
-          // PC - 다운로드
-          var a=document.createElement('a');
-          a.href=URL.createObjectURL(blob);
-          a.download='작업일보_'+currentDetailDs+'_'+currentDetailProjNum+'.png';
-          a.click();
+    // 렌더링 안정화 대기
+    await new Promise(function(r){setTimeout(r,80);});
+    // 실제 크기를 명시해서 캡처 (잘림 방지)
+    var w=Math.ceil(wrapper.getBoundingClientRect().width);
+    var h=Math.ceil(Math.max(wrapper.scrollHeight,wrapper.getBoundingClientRect().height));
+    var canvas=await html2canvas(wrapper,{
+      backgroundColor:'#f5f5f0',
+      scale:2,
+      useCORS:true,
+      logging:false,
+      width:w,
+      height:h,
+      windowWidth:w+40,
+      windowHeight:h+40,
+      scrollX:0,
+      scrollY:0
+    });
+    if(wrapper.parentNode)wrapper.parentNode.removeChild(wrapper);
+    wrapper=null;
+    canvas.toBlob(async function(blob){
+      hideL();
+      var fname='작업일보_'+currentDetailDs+'_'+currentDetailProjNum+'.png';
+      var file=new File([blob],fname,{type:'image/png'});
+      if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+        try{
+          await navigator.share({
+            files:[file],
+            title:'작업일보',
+            text:currentDetailDs+' '+currentDetailProjNum
+          });
+        }catch(e){
+          if(e.name!=='AbortError')alert('공유 중 오류가 발생했습니다.');
         }
-      },'image/png');
-    };
-  }catch(e){hideL();alert('이미지 생성 중 오류가 발생했습니다.');}
+      } else {
+        // PC - 다운로드
+        var a=document.createElement('a');
+        a.href=URL.createObjectURL(blob);
+        a.download=fname;
+        a.click();
+      }
+    },'image/png');
+  }catch(e){
+    if(wrapper&&wrapper.parentNode)wrapper.parentNode.removeChild(wrapper);
+    hideL();
+    alert('이미지 생성 중 오류가 발생했습니다.');
+  }
 }
 
 function goToAddWrite(){
