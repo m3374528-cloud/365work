@@ -1064,42 +1064,111 @@ async function loadRecords(){
   }catch(e){list.innerHTML='<p style="font-size:12px;color:#888;padding:12px">불러오지 못했어요</p>';}
 }
 
+var currentDetailProjNum='';
+var currentDetailDs='';
+
 async function showDetail(projNum,ds){
+  currentDetailProjNum=projNum;
+  currentDetailDs=ds;
   document.getElementById('detail-area').style.display='block';
   document.getElementById('detail-title').textContent=projNum;
   document.getElementById('detail-body').innerHTML='<p style="font-size:12px;color:#888">불러오는 중...</p>';
   try{
-    var results=await Promise.all([
-      fetchJ(SCRIPT_URL+'?action=getSubmitData&date='+encodeURIComponent(ds)+'&projNum='+encodeURIComponent(projNum)),
-      fetchJ(SCRIPT_URL+'?action=getCardHistory&date='+encodeURIComponent(ds))
-    ]);
-    var res=results[0];
+    var res=await fetchJ(SCRIPT_URL+'?action=getSubmitData&date='+encodeURIComponent(ds)+'&projNum='+encodeURIComponent(projNum));
     var mi=res.mainInfo||{};
     var html='';
-    html+='<div class="confirm-row"><span class="confirm-label">작업자</span><span class="confirm-value">'+(mi.workers||'')+'</span></div>';
+    // 기본 정보
+    html+='<div style="font-size:13px;font-weight:500;color:#1D9E75;margin-bottom:10px">'+ds+'</div>';
+    html+='<div class="confirm-row"><span class="confirm-label">현장</span><span class="confirm-value">'+projNum+'</span></div>';
+    html+='<div class="confirm-row"><span class="confirm-label">작업자</span><span class="confirm-value">'+(mi.workers||'')+(mi.workerCount?' ('+mi.workerCount+'명)':'')+'</span></div>';
     html+='<div class="confirm-row"><span class="confirm-label">작업시간</span><span class="confirm-value">'+(mi.timeStart||'')+'~'+(mi.timeEnd||'')+(mi.overtime&&mi.overtime!=='-'?' / 잔업 '+mi.overtime:'')+'</span></div>';
     if(mi.otWorkers&&mi.otWorkers!=='-')html+='<div class="confirm-row"><span class="confirm-label">잔업자</span><span class="confirm-value">'+mi.otWorkers+'</span></div>';
     if(mi.extraNote&&mi.extraNote!=='-')html+='<div class="confirm-row"><span class="confirm-label">기타사항</span><span class="confirm-value">'+mi.extraNote+'</span></div>';
-    if(res.expenses&&res.expenses.length>0){
-      html+='<div class="confirm-section"><div class="confirm-section-title">&#128179; 경비</div>';
+    // 경비
+    if(mi.noExpense==='Y'){
+      html+='<div class="confirm-row"><span class="confirm-label">경비</span><span class="confirm-value" style="color:#888">경비 사용 없음</span></div>';
+    } else if(res.expenses&&res.expenses.length>0){
+      html+='<div class="confirm-section"><div class="confirm-section-title">&#128179; 경비 사용 내역</div>';
       var et=0;
       res.expenses.forEach(function(e){
         et+=Number(e.amount||0);
-        var badge=e.isPersonal?'<span class="badge badge-personal">개인</span>':'<span class="badge badge-corp">'+e.cardCo+'('+e.last4+')</span>';
+        var badge=e.isPersonal?'<span class="badge badge-personal">개인('+e.userName+')</span>':'<span class="badge badge-corp">'+e.cardCo+'('+e.last4+')</span>';
         html+='<div class="confirm-item">'+e.item+' '+badge+'<br><strong>'+Number(e.amount||0).toLocaleString()+'원</strong></div>';
       });
-      html+='<div style="text-align:right;font-size:12px;font-weight:500;color:#1D9E75;margin-top:4px">합계: '+et.toLocaleString()+'원</div></div>';
-    }
-    if(res.equips&&res.equips.length>0){
-      html+='<div class="confirm-section"><div class="confirm-section-title">&#128663; 장비/외주</div>';
-      res.equips.forEach(function(e){
-        html+='<div class="confirm-item">'+e.type+' / '+e.company+'<br>공급가 <strong>'+Number(e.supplyAmt||0).toLocaleString()+'원</strong></div>';
-      });
+      html+='<div style="text-align:right;font-size:12px;font-weight:500;color:#1D9E75;margin-top:4px">합계: '+et.toLocaleString()+'원</div>';
+      if(mi.receiptCount)html+='<div style="font-size:11px;color:#888;margin-top:2px">영수증 '+mi.receiptCount+'장 첨부</div>';
       html+='</div>';
     }
+    // 장비/외주
+    if(res.equips&&res.equips.length>0){
+      html+='<div class="confirm-section"><div class="confirm-section-title">&#128663; 장비 / 외주 내역</div>';
+      var eqt=0;
+      res.equips.forEach(function(e){
+        eqt+=Number(e.totalAmt||0);
+        html+='<div class="confirm-item">'+e.type+' / '+e.company+'<br>공급가 <strong>'+Number(e.supplyAmt||0).toLocaleString()+'원</strong> (VAT포함 '+Number(e.totalAmt||0).toLocaleString()+'원)</div>';
+      });
+      html+='<div style="text-align:right;font-size:12px;font-weight:500;color:#534AB7;margin-top:4px">장비합계: '+eqt.toLocaleString()+'원</div></div>';
+    }
+    // 작성자/제출시각
+    html+='<div class="confirm-row" style="margin-top:8px"><span class="confirm-label">작성자</span><span class="confirm-value">'+(mi.writer||'')+'</span></div>';
+    if(mi.submitTime)html+='<div class="confirm-row"><span class="confirm-label">제출시각</span><span class="confirm-value">'+mi.submitTime+'</span></div>';
+    // 버튼
+    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;padding-bottom:20px">';
+    html+='<button onclick="shareDetail()" style="padding:12px;background:#1D9E75;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer">&#128228; 공유하기</button>';
+    html+='<button onclick="goToAddWrite()" style="padding:12px;background:#185FA5;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer">&#9999;&#65039; 추가 작성</button>';
+    html+='</div>';
     document.getElementById('detail-body').innerHTML=html;
   }catch(e){document.getElementById('detail-body').innerHTML='<p style="font-size:12px;color:#888">불러오지 못했어요</p>';}
   document.getElementById('detail-area').scrollIntoView({behavior:'smooth'});
+}
+
+async function shareDetail(){
+  var detailEl=document.getElementById('detail-body');
+  try{
+    showL('이미지 생성 중...');
+    var script=document.createElement('script');
+    script.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    document.head.appendChild(script);
+    script.onload=async function(){
+      var canvas=await html2canvas(detailEl,{backgroundColor:'#ffffff',scale:2});
+      canvas.toBlob(async function(blob){
+        hideL();
+        if(navigator.share&&navigator.canShare&&navigator.canShare({files:[new File([blob],'작업일보.png',{type:'image/png'})]})){
+          try{
+            await navigator.share({
+              files:[new File([blob],'작업일보_'+currentDetailDs+'_'+currentDetailProjNum+'.png',{type:'image/png'})],
+              title:'작업일보',
+              text:currentDetailDs+' '+currentDetailProjNum
+            });
+          }catch(e){
+            if(e.name!=='AbortError')alert('공유 중 오류가 발생했습니다.');
+          }
+        } else {
+          // PC - 다운로드
+          var a=document.createElement('a');
+          a.href=URL.createObjectURL(blob);
+          a.download='작업일보_'+currentDetailDs+'_'+currentDetailProjNum+'.png';
+          a.click();
+        }
+      },'image/png');
+    };
+  }catch(e){hideL();alert('이미지 생성 중 오류가 발생했습니다.');}
+}
+
+function goToAddWrite(){
+  // 작업일보 탭으로 이동 후 해당 현장 자동 선택
+  switchTab('write');
+  // 프로젝트 선택
+  setTimeout(function(){
+    var sel=document.getElementById('proj-sel');
+    for(var i=0;i<sel.options.length;i++){
+      if(sel.options[i].value.indexOf(currentDetailProjNum)!==-1){
+        sel.selectedIndex=i;
+        break;
+      }
+    }
+    onDateOrProjChange();
+  },300);
 }
 
 function closeDetail(){document.getElementById('detail-area').style.display='none';}
@@ -1299,4 +1368,3 @@ loadMasterData();
 </script>
 </body>
 </html>
-
