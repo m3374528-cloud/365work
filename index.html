@@ -1185,7 +1185,10 @@ async function shareDetail(){
       hideL();
       var fname='작업일보_'+currentDetailDs+'_'+currentDetailProjNum+'.png';
       var file=new File([blob],fname,{type:'image/png'});
-      if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+      // 모바일 판별 (터치 가능 + 모바일 UA). PC는 항상 다운로드로 저장.
+      var isMobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+      if(isMobile&&navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+        // 모바일 - 공유창 (카카오톡/플로우 등)
         try{
           await navigator.share({
             files:[file],
@@ -1196,11 +1199,15 @@ async function shareDetail(){
           if(e.name!=='AbortError')alert('공유 중 오류가 발생했습니다.');
         }
       } else {
-        // PC - 다운로드
+        // PC - 다운로드 폴더에 파일명(날짜_프로젝트번호)으로 바로 저장
+        var url=URL.createObjectURL(blob);
         var a=document.createElement('a');
-        a.href=URL.createObjectURL(blob);
+        a.href=url;
         a.download=fname;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
+        setTimeout(function(){URL.revokeObjectURL(url);},1000);
       }
     },'image/png');
   }catch(e){
