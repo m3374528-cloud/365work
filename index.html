@@ -154,7 +154,7 @@ textarea{resize:none;height:60px}
       <div class="sec-title">투입 작업자</div>
       <div class="chip-wrap" id="worker-wrap"></div>
       <div class="lbl">추가 인원</div>
-      <input type="text" id="extra-workers" placeholder="추가 작업자 이름 입력 (쉼표로 구분)">
+      <input type="text" id="extra-workers" placeholder="추가 작업자 이름 입력 (쉼표·슬래시·띄어쓰기로 구분)">
       <div class="labor-section" id="labor-section">
         <div class="labor-title">&#128176; 노무비 입력 (관리자만 확인)</div>
         <div id="labor-list"></div>
@@ -641,7 +641,7 @@ function syncOTWorkers(){
   wrap.innerHTML='';
   var selected=Array.from(document.querySelectorAll('#worker-wrap .chip.on')).map(function(c){return c.textContent;});
   var extra=document.getElementById('extra-workers').value.trim();
-  var all=selected.concat(extra?extra.split(',').map(function(s){return s.trim();}).filter(Boolean):[]);
+  var all=selected.concat(extra?extra.split(/[,\/\s]+/).map(function(s){return s.trim();}).filter(Boolean):[]);
   all.forEach(function(name){
     var div=document.createElement('div');
     div.className='chip';
@@ -837,9 +837,21 @@ function showConfirm(){
   var d=new Date(dateVal+'T00:00:00');
   var ds=toDateStr(d);
   var pp=proj.split('|');
-  var selectedWorkers=Array.from(document.querySelectorAll('#worker-wrap .chip.on')).map(function(c){return c.textContent;});
+  var selectedWorkers=Array.from(document.querySelectorAll('#worker-wrap .chip.on')).map(function(c){
+    var nm=c.textContent;
+    if(nm==='정성인력'){
+      var jc=parseInt(document.getElementById('jung-count').value)||1;
+      return '정성인력 '+jc+'명';
+    }
+    return nm;
+  });
   var extra=document.getElementById('extra-workers').value.trim();
-  if(extra)selectedWorkers=selectedWorkers.concat(extra.split(',').map(function(s){return s.trim();}).filter(Boolean));
+  if(extra)selectedWorkers=selectedWorkers.concat(extra.split(/[,\/\s]+/).map(function(s){return s.trim();}).filter(Boolean));
+  // 실제 투입 인원수 (정성인력 N명은 N으로 카운트)
+  var realWorkerCount=selectedWorkers.reduce(function(sum,nm){
+    var m=nm.match(/정성인력\s*(\d+)\s*명/);
+    return sum+(m?parseInt(m[1]):1);
+  },0);
   var otChk=document.getElementById('ot-chk').checked;
   var otWorkers=otChk?Array.from(document.querySelectorAll('#ot-worker-wrap .chip.on')).map(function(c){return c.textContent;}).join(', '):'';
   var extraNote=document.getElementById('extra-note').value.trim();
@@ -869,7 +881,7 @@ function showConfirm(){
 
   submitPayload={
     type:'expense',date:ds,projNum:pp[1],projName:pp[2],projBiz:pp[0],
-    workers:selectedWorkers.join(', '),workerCount:selectedWorkers.length,
+    workers:selectedWorkers.join(', '),workerCount:realWorkerCount,
     timeStart:document.getElementById('t-start').value,timeEnd:document.getElementById('t-end').value,
     overtime:otChk?document.getElementById('ot-start').value+'~'+document.getElementById('ot-end').value:'',
     otWorkers:otWorkers,extraNote:extraNote,
@@ -884,7 +896,7 @@ function showConfirm(){
   html+='<div class="confirm-row"><span class="confirm-label">날짜</span><span class="confirm-value">'+ds+'</span></div>';
   html+='<div class="confirm-row"><span class="confirm-label">현장</span><span class="confirm-value">'+pp[2]+'</span></div>';
   html+='<div class="confirm-row"><span class="confirm-label">프로젝트</span><span class="confirm-value">'+pp[1]+'</span></div>';
-  html+='<div class="confirm-row"><span class="confirm-label">작업자</span><span class="confirm-value">'+selectedWorkers.join(', ')+' ('+selectedWorkers.length+'명)</span></div>';
+  html+='<div class="confirm-row"><span class="confirm-label">작업자</span><span class="confirm-value">'+selectedWorkers.join(', ')+' ('+realWorkerCount+'명)</span></div>';
   html+='<div class="confirm-row"><span class="confirm-label">작업시간</span><span class="confirm-value">'+document.getElementById('t-start').value+'~'+document.getElementById('t-end').value+(otChk?' / 잔업 '+document.getElementById('ot-start').value+'~'+document.getElementById('ot-end').value:'')+'</span></div>';
   if(otWorkers)html+='<div class="confirm-row"><span class="confirm-label">잔업자</span><span class="confirm-value">'+otWorkers+'</span></div>';
   if(extraNote)html+='<div class="confirm-row"><span class="confirm-label">기타사항</span><span class="confirm-value">'+extraNote+'</span></div>';
