@@ -1093,6 +1093,17 @@ async function showDetail(projNum,ds){
     html+='<div style="font-size:13px;font-weight:500;color:#1D9E75;margin-bottom:10px">'+ds+'</div>';
     html+='<div class="confirm-row"><span class="confirm-label">현장</span><span class="confirm-value">'+projNum+'</span></div>';
     html+='<div class="confirm-row"><span class="confirm-label">작업자</span><span class="confirm-value">'+(mi.workers||'')+(mi.workerCount?' ('+mi.workerCount+'명)':'')+'</span></div>';
+    // 정성인력 출역 인원 (노무비내역 참조) — 정성인력 항목만 골라서 표시
+    if(res.laborData&&res.laborData.length>0){
+      var jungList=res.laborData.filter(function(l){
+        var nm=(l.name||l.worker||'')+'';
+        return nm.indexOf('정성')>-1;
+      });
+      if(jungList.length>0){
+        var jungTxt=jungList.map(function(l){return (l.name||l.worker||'')+'';}).join(', ');
+        html+='<div class="confirm-row"><span class="confirm-label">정성인력</span><span class="confirm-value" style="color:#C17D20;font-weight:500">'+jungTxt+'</span></div>';
+      }
+    }
     html+='<div class="confirm-row"><span class="confirm-label">작업시간</span><span class="confirm-value">'+(mi.timeStart||'')+'~'+(mi.timeEnd||'')+(mi.overtime&&mi.overtime!=='-'?' / 잔업 '+mi.overtime:'')+'</span></div>';
     if(mi.otWorkers&&mi.otWorkers!=='-')html+='<div class="confirm-row"><span class="confirm-label">잔업자</span><span class="confirm-value">'+mi.otWorkers+'</span></div>';
     if(mi.extraNote&&mi.extraNote!=='-')html+='<div class="confirm-row"><span class="confirm-label">기타사항</span><span class="confirm-value">'+mi.extraNote+'</span></div>';
