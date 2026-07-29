@@ -1136,12 +1136,10 @@ async function showDetail(projNum,ds){
     html+='<div class="confirm-row" style="margin-top:8px"><span class="confirm-label">작성자</span><span class="confirm-value">'+(mi.writer||'')+'</span></div>';
     if(mi.submitTime)html+='<div class="confirm-row"><span class="confirm-label">제출시각</span><span class="confirm-value">'+mi.submitTime+'</span></div>';
     // 버튼
-    html+='<div style="margin-top:16px;padding-bottom:20px">';
-    html+='<button onclick="shareDetail()" style="width:100%;padding:12px;background:#1D9E75;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;margin-bottom:8px">&#128228; 공유하기</button>';
-    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
-    html+='<button onclick="goToEdit()" style="padding:12px;background:#E6F1FB;color:#185FA5;border:none;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer">&#9999;&#65039; 수정하기</button>';
-    html+='<button onclick="goToAddWrite()" style="padding:12px;background:#185FA5;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer">&#10133; 추가 작성</button>';
-    html+='</div></div>';
+    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;padding-bottom:20px">';
+    html+='<button onclick="shareDetail()" style="padding:12px;background:#1D9E75;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer">&#128228; 공유하기</button>';
+    html+='<button onclick="goToAddWrite()" style="padding:12px;background:#185FA5;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer">&#9999;&#65039; 추가 작성</button>';
+    html+='</div>';
     document.getElementById('detail-body').innerHTML=html;
   }catch(e){document.getElementById('detail-body').innerHTML='<p style="font-size:12px;color:#888">불러오지 못했어요</p>';}
   document.getElementById('detail-area').scrollIntoView({behavior:'smooth'});
@@ -1259,44 +1257,6 @@ function goToAddWrite(){
 }
 
 function closeDetail(){document.getElementById('detail-area').style.display='none';}
-
-// 확인탭에서 '수정하기' → 작업일보 탭으로 이동, 날짜·현장 맞추고 수정 모드 자동 진입
-function goToEdit(){
-  var projNum=currentDetailProjNum;
-  var ds=currentDetailDs; // 예: 2026.07.28
-  switchTab('write');
-  setTimeout(function(){
-    // 날짜 세팅 (2026.07.28 → 2026-07-28)
-    if(ds){
-      var p=ds.split('.');
-      if(p.length===3){
-        document.getElementById('work-date').value=p[0]+'-'+p[1]+'-'+p[2];
-      }
-    }
-    // 현장 선택
-    var sel=document.getElementById('proj-sel');
-    for(var i=0;i<sel.options.length;i++){
-      if(sel.options[i].value.indexOf(projNum)!==-1){
-        sel.selectedIndex=i;
-        break;
-      }
-    }
-    // 이력 조회 → 이력 있으면 자동으로 수정 모드 진입
-    onDateOrProjChange();
-    // history-box가 뜰 때까지 잠깐씩 재시도 (네트워크 응답 대기)
-    var tries=0;
-    var timer=setInterval(function(){
-      tries++;
-      var hbox=document.getElementById('history-box');
-      if(hbox&&hbox.style.display!=='none'){
-        clearInterval(timer);
-        startEdit();
-      } else if(tries>=15){ // 약 3초까지 대기
-        clearInterval(timer);
-      }
-    },200);
-  },300);
-}
 
 // ===== 공지사항 배너 =====
 async function loadUnsubmittedBanner(){
