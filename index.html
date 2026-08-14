@@ -480,6 +480,9 @@ async function loadExistingData(){
     hideL();
     if(!res)return;
     var mi=res.mainInfo||{};
+    // 최신 seq 기억 (수정 저장 시 +1 되어 수정본으로 저장됨)
+    if(res.maxSeq)currentSeq=res.maxSeq;
+    else if(mi.seq)currentSeq=mi.seq;
 
     // ── 작업자 복원 (정성인력 N명은 드롭다운으로) ──
     var workersRaw=(mi.workers||'')+'';
@@ -1385,34 +1388,46 @@ async function cleanupOriginal(){
 }
 
 // 확인탭 '수정하기' → 작업일보 탭 이동, 날짜·현장 세팅, 수정모드로 전체 복원
-function goToEditConfirm(){
+async function goToEditConfirm(){
   var projNum=currentDetailProjNum;
   var ds=currentDetailDs; // 2026.07.28 형식
-  switchTab('write');
-  setTimeout(function(){
-    // 날짜 세팅 (2026.07.28 → 2026-07-28)
-    if(ds){
-      var p=ds.split('.');
-      if(p.length===3)document.getElementById('work-date').value=p[0]+'-'+p[1]+'-'+p[2];
-    }
-    // 현장 선택
-    var sel=document.getElementById('proj-sel');
-    for(var i=0;i<sel.options.length;i++){
-      if(sel.options[i].value.indexOf(projNum)!==-1){ sel.selectedIndex=i; break; }
-    }
-    // 폼 표시 + 중복안내 확인
-    onDateOrProjChange();
-    // 잠시 후 수정 모드 진입 + 전체 복원
-    setTimeout(function(){
-      currentMode='edit';
-      currentSeq=(currentSeq||1)+1;
-      var banner=document.getElementById('edit-banner');
-      if(banner)banner.style.display='block';
-      var dn=document.getElementById('dup-notice');
-      if(dn)dn.style.display='none';
-      loadExistingData();
-    },400);
-  },300);
+  // 탭 전환
+  document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on');});
+  document.querySelectorAll('.page').forEach(function(x){x.classList.remove('on');});
+  document.getElementById('tab-write').classList.add('on');
+  document.getElementById('page-write').classList.add('on');
+  loadUnsubmittedBanner();
+  showL('기존 데이터 준비 중...');
+  // ★ 프로젝트 목록 로드가 끝날 때까지 기다림 (핵심)
+  await refreshProjectList();
+  hideL();
+  // 날짜 세팅 (2026.07.28 → 2026-07-28)
+  if(ds){
+    var p=ds.split('.');
+    if(p.length===3)document.getElementById('work-date').value=p[0]+'-'+p[1]+'-'+p[2];
+  }
+  // 현장 선택 (목록이 채워진 후이므로 확실히 선택됨)
+  var sel=document.getElementById('proj-sel');
+  var picked=false;
+  for(var i=0;i<sel.options.length;i++){
+    if(sel.options[i].value.indexOf(projNum)!==-1){ sel.selectedIndex=i; picked=true; break; }
+  }
+  if(!picked){ alert('현장 목록에서 이 현장을 찾지 못했습니다. 프로젝트목록을 확인해주세요.'); return; }
+  // 폼 표시
+  document.getElementById('form-body').style.display='block';
+  document.getElementById('confirm-area').style.display='none';
+  document.getElementById('complete-box').classList.remove('show');
+  // 수정 모드 진입
+  currentMode='edit';
+  currentSeq=1;
+  var banner=document.getElementById('edit-banner');
+  if(banner)banner.style.display='block';
+  var dn=document.getElementById('dup-notice');
+  if(dn)dn.style.display='none';
+  // ★ 복원 (await로 완료 보장)
+  await loadExistingData();
+  // 복원 후 seq를 최신+1로 (수정본으로 저장되도록)
+  currentSeq=(currentSeq||1)+1;
 }
 
 // ===== 공지사항 배너 =====
