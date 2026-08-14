@@ -149,6 +149,7 @@ textarea{resize:none;height:60px}
       <select id="proj-sel" onchange="onDateOrProjChange()">
         <option value="">— 프로젝트 선택 —</option>
       </select>
+      <div id="dup-notice" style="display:none;margin-top:10px;padding:12px;background:#FFF6E5;border:1px solid #FAC775;border-radius:10px;font-size:13px;color:#C17D20;font-weight:500"></div>
     </div>
     <div class="section">
       <div class="sec-title">투입 작업자</div>
@@ -413,7 +414,6 @@ async function refreshProjectList(){
 function onDateOrProjChange(){
   var proj=document.getElementById('proj-sel').value;
   if(proj){
-    document.getElementById('history-box').style.display='none';
     document.getElementById('form-body').style.display='block';
     document.getElementById('confirm-area').style.display='none';
     document.getElementById('complete-box').classList.remove('show');
@@ -431,7 +431,17 @@ async function checkExistingRecord(){
   try{
     var res=await fetchJ(SCRIPT_URL+'?action=checkSubmit&date='+encodeURIComponent(ds)+'&projNum='+encodeURIComponent(pp[1]));
     if(res.data&&res.data.length>0){
-      showHistory(res.data);
+      // 이미 제출된 일보가 있음을 안내만 함 (자동 수정 모드로 들어가지 않음 - 데이터 소실 방지)
+      var box=document.getElementById('dup-notice');
+      if(box){
+        box.style.display='block';
+        box.innerHTML='&#9888;&#65039; 이 날짜·현장은 이미 작업일보가 제출되어 있습니다.<br>'+
+          '<span style="font-size:12px;color:#888">계속 작성하면 <b>별도의 새 일보</b>로 저장됩니다. 기존 내용을 고치려면 <b>확인 탭</b>에서 수정하세요.</span>';
+      }
+      currentSeq=res.data[res.data.length-1].seq;
+    } else {
+      var box2=document.getElementById('dup-notice');
+      if(box2)box2.style.display='none';
     }
   }catch(e){}
 }
@@ -466,24 +476,110 @@ async function loadExistingData(){
   var pp=proj.split('|');
   showL('기존 데이터 불러오는 중...');
   try{
-    var results=await Promise.all([
-      fetchJ(SCRIPT_URL+'?action=getSubmitData&date='+encodeURIComponent(ds)+'&projNum='+encodeURIComponent(pp[1])),
-      fetchJ(SCRIPT_URL+'?action=getCardHistory&date='+encodeURIComponent(ds))
-    ]);
+    var res=await fetchJ(SCRIPT_URL+'?action=getSubmitData&date='+encodeURIComponent(ds)+'&projNum='+encodeURIComponent(pp[1]));
     hideL();
-    var res=results[0];
     if(!res)return;
-    // 작업자 복원
-    var workers=(res.workers||'').split(',').map(function(w){return w.trim();});
-    document.querySelectorAll('#worker-wrap .chip').forEach(function(c){
-      if(workers.indexOf(c.textContent.trim())!==-1)c.classList.add('on');
+    var mi=res.mainInfo||{};
+
+    // ── 작업자 복원 (정성인력 N명은 드롭다운으로) ──
+    var workersRaw=(mi.workers||'')+'';
+    var workerArr=workersRaw.split(',').map(function(w){return w.trim();}).filter(Boolean);
+    var extraNames=[];
+    workerArr.forEach(function(nm){
+      // 정성인력 N명 처리
+      var jm=nm.match(/^정성인력\s*(\d+)\s*명$/);
+      if(jm){
+        // 정성인력 칩 켜기 + 인원수 드롭다운
+        var jungChip=Array.from(document.querySelectorAll('#worker-wrap .chip')).find(function(c){return c.textContent==='정성인력';});
+        if(jungChip){
+          jungChip.classList.add('on');
+          if(jungChip.onclick)jungChip.onclick();
+          setTimeout(function(){
+            var jc=document.getElementById('jung-count');
+            if(jc)jc.value=jm[1];
+          },50);
+        }
+        return;
+      }
+      // 일반 선택칩
+      var chip=Array.from(document.querySelectorAll('#worker-wrap .chip')).find(function(c){return c.textContent.trim()===nm;});
+      if(chip){ chip.classList.add('on'); }
+      else { extraNames.push(nm); } // 칩에 없으면 수기입력으로
     });
-    // 작업시간 복원
-    if(res.timeStart)document.getElementById('t-start').value=res.timeStart;
-    if(res.timeEnd)document.getElementById('t-end').value=res.timeEnd;
-    // 작성자 복원
-    if(res.writer)document.getElementById('writer').value=res.writer;
-  }catch(e){hideL();}
+    if(extraNames.length>0)document.getElementById('extra-workers').value=extraNames.join(', ');
+
+    // ── 작업시간 복원 ──
+    if(mi.timeStart)document.getElementById('t-start').value=mi.timeStart;
+    if(mi.timeEnd)document.getElementById('t-end').value=mi.timeEnd;
+
+    // ── 잔업 복원 ──
+    if(mi.overtime&&mi.overtime!=='-'&&mi.overtime.indexOf('~')!==-1){
+      var otChk=document.getElementById('ot-chk');
+      otChk.checked=true; toggleOT(otChk);
+      var otp=mi.overtime.split('~');
+      if(document.getElementById('ot-start'))document.getElementById('ot-start').value=otp[0];
+      if(document.getElementById('ot-end'))document.getElementById('ot-end').value=otp[1];
+    }
+
+    // ── 기타사항 복원 ──
+    if(mi.extraNote&&mi.extraNote!=='-')document.getElementById('extra-note').value=mi.extraNote;
+
+    // ── 작성자 복원 ──
+    if(mi.writer)document.getElementById('writer').value=mi.writer;
+
+    // ── 경비 복원 ──
+    document.getElementById('expense-list').innerHTML='';
+    var exps=res.expenses||[];
+    if(exps.length>0){
+      // 카드 선택 (경비 전체 공통 - 첫 항목 기준)
+      var first=exps[0];
+      var cardChips=document.querySelectorAll('#expense-cards .card-chip');
+      cardChips.forEach(function(c){
+        if(String(c.dataset.last4)===String(first.last4)&&c.dataset.cardco===String(first.cardCo)){
+          cardChips.forEach(function(x){x.classList.remove('on');});
+          c.classList.add('on');
+        }
+      });
+      // 개인카드면 이름 복원
+      if(first.isPersonal&&first.userName&&first.userName!=='-'){
+        var pn=document.getElementById('expense-pname');
+        if(pn)pn.value=first.userName;
+      }
+      // 항목들 추가
+      exps.forEach(function(exp){
+        addExpenseItem();
+        var id=expCount;
+        // 주유(차량) 라벨 분리
+        var itemName=exp.item, vehicle='';
+        var vm=(''+exp.item).match(/^주유\((.+)\)$/);
+        if(vm){ itemName='주유'; vehicle=vm[1]; }
+        var itemSel=document.getElementById('exp-item-'+id);
+        if(itemSel){ itemSel.value=itemName; onExpItemChange(id); }
+        if(vehicle){ var vsel=document.getElementById('exp-vehicle-'+id); if(vsel)vsel.value=vehicle; }
+        var amtEl=document.getElementById('exp-amt-'+id);
+        if(amtEl)amtEl.value=exp.amount;
+      });
+    }
+
+    // ── 장비 복원 ──
+    document.getElementById('equip-list').innerHTML='';
+    var eqs=res.equips||[];
+    eqs.forEach(function(eq){
+      addEquip();
+      var id=eqCount;
+      // 종류 칩 선택
+      var chips=document.querySelectorAll('#eq-chips-'+id+' .eq-chip');
+      chips.forEach(function(c){ if(c.textContent===eq.type){ c.classList.add('on'); } });
+      var coEl=document.getElementById('eq-co-'+id); if(coEl)coEl.value=eq.company||'';
+      var amtEl=document.getElementById('eq-amt-'+id); if(amtEl){ amtEl.value=eq.supplyAmt||0; calcVat(id); }
+    });
+
+    // ── 경비 없음 체크 복원 ──
+    if(mi.noExpense==='Y'){
+      var ne=document.getElementById('no-expense-chk');
+      if(ne){ ne.checked=true; toggleNoExpense(ne); }
+    }
+  }catch(e){hideL();alert('기존 데이터를 불러오지 못했습니다.');}
 }
 
 // ===== 작업자 =====
@@ -1091,6 +1187,12 @@ async function showDetail(projNum,ds){
     var html='';
     // 기본 정보
     html+='<div style="font-size:13px;font-weight:500;color:#1D9E75;margin-bottom:10px">'+ds+'</div>';
+    // 수정본 안내 (원본+수정본이 함께 있을 때)
+    if(res.hasRevision){
+      html+='<div style="margin-bottom:10px;padding:10px 12px;background:#D9EAD3;border:1px solid #A8D08D;border-radius:8px;font-size:12px;color:#38761D;font-weight:500">'+
+        '&#9998; 이 현장에는 <b>수정본</b>이 있습니다. 아래는 <b>최신 수정본</b> 내용입니다.<br>'+
+        '<span style="font-size:11px;color:#6AA84F">확인 후 [원본 정리]를 누르면 이전 원본이 삭제되어 집계가 정확해집니다.</span></div>';
+    }
     html+='<div class="confirm-row"><span class="confirm-label">현장</span><span class="confirm-value">'+projNum+'</span></div>';
     html+='<div class="confirm-row"><span class="confirm-label">작업자</span><span class="confirm-value">'+(mi.workers||'')+(mi.workerCount?' ('+mi.workerCount+'명)':'')+'</span></div>';
     // 정성인력 출역 인원 (노무비내역 참조) — 정성인력 항목만 골라서 표시
@@ -1136,9 +1238,16 @@ async function showDetail(projNum,ds){
     html+='<div class="confirm-row" style="margin-top:8px"><span class="confirm-label">작성자</span><span class="confirm-value">'+(mi.writer||'')+'</span></div>';
     if(mi.submitTime)html+='<div class="confirm-row"><span class="confirm-label">제출시각</span><span class="confirm-value">'+mi.submitTime+'</span></div>';
     // 버튼
-    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;padding-bottom:20px">';
-    html+='<button onclick="shareDetail()" style="padding:12px;background:#1D9E75;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer">&#128228; 공유하기</button>';
-    html+='<button onclick="goToAddWrite()" style="padding:12px;background:#185FA5;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer">&#9999;&#65039; 추가 작성</button>';
+    html+='<div class="detail-btns" style="margin-top:16px;padding-bottom:20px">';
+    // 원본 정리 (수정본이 있을 때만 노출)
+    if(res.hasRevision){
+      html+='<button onclick="cleanupOriginal()" style="width:100%;padding:12px;background:#38761D;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px">&#128465;&#65039; 원본 정리 (이전 원본 삭제)</button>';
+    }
+    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">';
+    html+='<button onclick="goToEditConfirm()" style="padding:12px;background:#E6F1FB;color:#185FA5;border:none;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer">&#9999;&#65039; 수정하기</button>';
+    html+='<button onclick="goToAddWrite()" style="padding:12px;background:#185FA5;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer">&#10133; 추가 작성</button>';
+    html+='</div>';
+    html+='<button onclick="shareDetail()" style="width:100%;padding:12px;background:#1D9E75;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer">&#128228; 공유하기</button>';
     html+='</div>';
     document.getElementById('detail-body').innerHTML=html;
   }catch(e){document.getElementById('detail-body').innerHTML='<p style="font-size:12px;color:#888">불러오지 못했어요</p>';}
@@ -1176,7 +1285,7 @@ async function shareDetail(){
       'overflow:visible;box-shadow:0 2px 8px rgba(0,0,0,0.06)';
     card.innerHTML=document.getElementById('detail-body').innerHTML;
     // 버튼 영역 제거
-    var btnWrap=card.querySelector('div[style*="grid-template-columns"]');
+    var btnWrap=card.querySelector('.detail-btns');
     if(btnWrap&&btnWrap.parentNode)btnWrap.parentNode.removeChild(btnWrap);
     wrapper.appendChild(card);
     // 하단 워터마크
@@ -1257,6 +1366,54 @@ function goToAddWrite(){
 }
 
 function closeDetail(){document.getElementById('detail-area').style.display='none';}
+
+// 확인탭 '원본 정리' → 서버에 옛 원본 삭제 요청 (최신 수정본만 남김)
+async function cleanupOriginal(){
+  if(!confirm('이전 원본을 삭제하고 최신 수정본만 남깁니다.\n\n삭제된 원본은 복구할 수 없습니다. 진행할까요?'))return;
+  showL('원본 정리 중...');
+  try{
+    var res=await postJ({type:'cleanupOriginal',date:currentDetailDs,projNum:currentDetailProjNum});
+    hideL();
+    if(res.result==='success'){
+      alert('원본이 정리되었습니다. 이제 최신본만 남았습니다.');
+      // 상세 새로고침
+      showDetail(currentDetailProjNum,currentDetailDs);
+    } else {
+      alert('정리 중 문제가 발생했습니다.');
+    }
+  }catch(e){hideL();alert('정리 중 오류가 발생했습니다.');}
+}
+
+// 확인탭 '수정하기' → 작업일보 탭 이동, 날짜·현장 세팅, 수정모드로 전체 복원
+function goToEditConfirm(){
+  var projNum=currentDetailProjNum;
+  var ds=currentDetailDs; // 2026.07.28 형식
+  switchTab('write');
+  setTimeout(function(){
+    // 날짜 세팅 (2026.07.28 → 2026-07-28)
+    if(ds){
+      var p=ds.split('.');
+      if(p.length===3)document.getElementById('work-date').value=p[0]+'-'+p[1]+'-'+p[2];
+    }
+    // 현장 선택
+    var sel=document.getElementById('proj-sel');
+    for(var i=0;i<sel.options.length;i++){
+      if(sel.options[i].value.indexOf(projNum)!==-1){ sel.selectedIndex=i; break; }
+    }
+    // 폼 표시 + 중복안내 확인
+    onDateOrProjChange();
+    // 잠시 후 수정 모드 진입 + 전체 복원
+    setTimeout(function(){
+      currentMode='edit';
+      currentSeq=(currentSeq||1)+1;
+      var banner=document.getElementById('edit-banner');
+      if(banner)banner.style.display='block';
+      var dn=document.getElementById('dup-notice');
+      if(dn)dn.style.display='none';
+      loadExistingData();
+    },400);
+  },300);
+}
 
 // ===== 공지사항 배너 =====
 async function loadUnsubmittedBanner(){
