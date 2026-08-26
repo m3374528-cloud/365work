@@ -1200,7 +1200,9 @@ async function showDetail(projNum,ds,projName,projBiz){
         '&#9998; 이 현장에는 <b>수정본</b>이 있습니다. 아래는 <b>최신 수정본</b> 내용입니다.<br>'+
         '<span style="font-size:11px;color:#6AA84F">확인 후 [원본 정리]를 누르면 이전 원본이 삭제되어 집계가 정확해집니다.</span></div>';
     }
-    html+='<div class="confirm-row"><span class="confirm-label">현장</span><span class="confirm-value">'+projNum+'</span></div>';
+    html+='<div class="confirm-row"><span class="confirm-label">현장번호</span><span class="confirm-value">'+projNum+'</span></div>';
+    if(currentDetailProjBiz)html+='<div class="confirm-row"><span class="confirm-label">사업장</span><span class="confirm-value">'+currentDetailProjBiz+'</span></div>';
+    if(currentDetailProjName)html+='<div class="confirm-row"><span class="confirm-label">현장명</span><span class="confirm-value">'+currentDetailProjName+'</span></div>';
     html+='<div class="confirm-row"><span class="confirm-label">작업자</span><span class="confirm-value">'+(mi.workers||'')+(mi.workerCount?' ('+mi.workerCount+'명)':'')+'</span></div>';
     // 정성인력 출역 인원 (노무비내역 참조) — 정성인력 항목만 골라서 표시
     if(res.laborData&&res.laborData.length>0){
