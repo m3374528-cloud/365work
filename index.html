@@ -1230,12 +1230,6 @@ async function showDetail(projNum,ds,projName,projBiz){
     currentDetailWriter=mi.writer||'';
     // 기본 정보
     html+='<div style="font-size:13px;font-weight:500;color:#1D9E75;margin-bottom:10px">'+ds+'</div>';
-    // 수정본 안내 (원본+수정본이 함께 있을 때)
-    if(res.hasRevision){
-      html+='<div style="margin-bottom:10px;padding:10px 12px;background:#D9EAD3;border:1px solid #A8D08D;border-radius:8px;font-size:12px;color:#38761D;font-weight:500">'+
-        '&#9998; 이 현장에는 <b>수정본</b>이 있습니다. 아래는 <b>최신 수정본</b> 내용입니다.<br>'+
-        '<span style="font-size:11px;color:#6AA84F">확인 후 [원본 정리]를 누르면 이전 원본이 삭제되어 집계가 정확해집니다.</span></div>';
-    }
     html+='<div class="confirm-row"><span class="confirm-label">현장번호</span><span class="confirm-value">'+projNum+'</span></div>';
     if(currentDetailProjBiz)html+='<div class="confirm-row"><span class="confirm-label">사업장</span><span class="confirm-value">'+currentDetailProjBiz+'</span></div>';
     if(currentDetailProjName)html+='<div class="confirm-row"><span class="confirm-label">현장명</span><span class="confirm-value">'+currentDetailProjName+'</span></div>';
@@ -1284,12 +1278,8 @@ async function showDetail(projNum,ds,projName,projBiz){
     if(mi.submitTime)html+='<div class="confirm-row"><span class="confirm-label">제출시각</span><span class="confirm-value">'+mi.submitTime+'</span></div>';
     // 버튼
     html+='<div class="detail-btns" style="margin-top:16px;padding-bottom:20px">';
-    // 원본 정리 (수정본이 있을 때만 노출)
-    if(res.hasRevision){
-      html+='<button onclick="cleanupOriginal()" style="width:100%;padding:12px;background:#38761D;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px">&#128465;&#65039; 원본 정리 (이전 원본 삭제)</button>';
-    }
     html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">';
-    html+='<button onclick="goToEditConfirm()" style="padding:12px;background:#E6F1FB;color:#185FA5;border:none;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer">&#9999;&#65039; 수정하기</button>';
+    html+='<button onclick="openEditRequest()" style="padding:12px;background:#FBEEDA;color:#C17D20;border:none;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer">&#9998; 수정 요청하기</button>';
     html+='<button onclick="goToAddWrite()" style="padding:12px;background:#185FA5;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer">&#10133; 추가 작성</button>';
     html+='</div>';
     html+='<button onclick="shareDetail()" style="width:100%;padding:12px;background:#1D9E75;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer">&#128228; 공유하기</button>';
@@ -1507,75 +1497,34 @@ function goToAddWrite(){
 function closeDetail(){document.getElementById('detail-area').style.display='none';}
 
 // 확인탭 '원본 정리' → 서버에 옛 원본 삭제 요청 (최신 수정본만 남김)
-async function cleanupOriginal(){
-  if(!confirm('이전 원본을 삭제하고 최신 수정본만 남깁니다.\n\n삭제된 원본은 복구할 수 없습니다. 진행할까요?'))return;
-  showL('원본 정리 중...');
+// 확인탭 '수정 요청하기' → 요청사항+요청자 입력받아 수정요청 시트에 저장
+async function openEditRequest(){
+  var content=prompt('수정 요청 사항을 입력하세요.\n(예: 8/13 김덕수 빠졌어요, 조식 금액 3만원으로 수정 등)');
+  if(content===null)return;               // 취소
+  content=content.trim();
+  if(!content){ alert('요청 사항을 입력해주세요.'); return; }
+  var requester=prompt('요청자 이름을 입력하세요.');
+  if(requester===null)return;
+  requester=(requester||'').trim()||'미입력';
+  showL('수정 요청 전송 중...');
   try{
-    var res=await postJ({type:'cleanupOriginal',date:currentDetailDs,projNum:currentDetailProjNum});
+    var res=await postJ({
+      type:'saveEditRequest',
+      date:currentDetailDs,
+      projNum:currentDetailProjNum,
+      projName:currentDetailProjName||'',
+      content:content,
+      requester:requester
+    });
     hideL();
     if(res.result==='success'){
-      alert('원본이 정리되었습니다. 이제 최신본만 남았습니다.');
-      // 상세 새로고침
-      showDetail(currentDetailProjNum,currentDetailDs,currentDetailProjName,currentDetailProjBiz);
+      alert('수정 요청이 전송되었습니다.\n관리자가 확인 후 처리합니다.');
     } else {
-      alert('정리 중 문제가 발생했습니다.');
+      alert('전송 중 문제가 발생했습니다.');
     }
-  }catch(e){hideL();alert('정리 중 오류가 발생했습니다.');}
+  }catch(e){hideL();alert('전송 중 오류가 발생했습니다.');}
 }
 
-// 확인탭 '수정하기' → 작업일보 탭 이동, 날짜·현장 세팅, 수정모드로 전체 복원
-async function goToEditConfirm(){
-  var projNum=currentDetailProjNum;
-  var ds=currentDetailDs; // 2026.07.28 형식
-  // 탭 전환
-  document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on');});
-  document.querySelectorAll('.page').forEach(function(x){x.classList.remove('on');});
-  document.getElementById('tab-write').classList.add('on');
-  document.getElementById('page-write').classList.add('on');
-  loadUnsubmittedBanner();
-  showL('기존 데이터 준비 중...');
-  // ★ 프로젝트 목록 로드가 끝날 때까지 기다림 (핵심)
-  await refreshProjectList();
-  hideL();
-  // 날짜 세팅 (2026.07.28 → 2026-07-28)
-  if(ds){
-    var p=ds.split('.');
-    if(p.length===3)document.getElementById('work-date').value=p[0]+'-'+p[1]+'-'+p[2];
-  }
-  // 현장 선택 (목록이 채워진 후이므로 확실히 선택됨)
-  var sel=document.getElementById('proj-sel');
-  var picked=false;
-  for(var i=0;i<sel.options.length;i++){
-    if(sel.options[i].value.indexOf(projNum)!==-1){ sel.selectedIndex=i; picked=true; break; }
-  }
-  // 완료 처리되어 드롭다운에 없는 현장이면 임시로 추가해서 선택
-  if(!picked){
-    var biz=currentDetailProjBiz||'';
-    var pname=currentDetailProjName||'';
-    var opt=document.createElement('option');
-    opt.value=biz+'|'+projNum+'|'+pname;
-    opt.textContent='['+projNum+'] '+pname+' (완료)';
-    sel.appendChild(opt);
-    sel.value=opt.value;
-    picked=true;
-  }
-  if(!picked){ alert('현장 정보를 찾지 못했습니다.'); return; }
-  // 폼 표시
-  document.getElementById('form-body').style.display='block';
-  document.getElementById('confirm-area').style.display='none';
-  document.getElementById('complete-box').classList.remove('show');
-  // 수정 모드 진입
-  currentMode='edit';
-  currentSeq=1;
-  var banner=document.getElementById('edit-banner');
-  if(banner)banner.style.display='block';
-  var dn=document.getElementById('dup-notice');
-  if(dn)dn.style.display='none';
-  // ★ 복원 (await로 완료 보장)
-  await loadExistingData();
-  // 복원 후 seq를 최신+1로 (수정본으로 저장되도록)
-  currentSeq=(currentSeq||1)+1;
-}
 
 // ===== 공지사항 배너 =====
 async function loadUnsubmittedBanner(){
